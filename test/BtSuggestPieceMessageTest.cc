@@ -7,28 +7,27 @@
 
 namespace aria2 {
 
-class BtSuggestPieceMessageTest:public CppUnit::TestFixture {
+class BtSuggestPieceMessageTest : public CppUnit::TestFixture {
 
   CPPUNIT_TEST_SUITE(BtSuggestPieceMessageTest);
   CPPUNIT_TEST(testCreate);
   CPPUNIT_TEST(testCreateMessage);
   CPPUNIT_TEST(testToString);
   CPPUNIT_TEST_SUITE_END();
-private:
 
+private:
 public:
-  void setUp() {
-  }
+  void setUp() {}
 
   void testCreate();
   void testCreateMessage();
   void testToString();
 };
 
-
 CPPUNIT_TEST_SUITE_REGISTRATION(BtSuggestPieceMessageTest);
 
-void BtSuggestPieceMessageTest::testCreate() {
+void BtSuggestPieceMessageTest::testCreate()
+{
   unsigned char msg[9];
   bittorrent::createPeerMessageString(msg, sizeof(msg), 5, 13);
   bittorrent::setIntParam(&msg[5], 12345);
@@ -42,7 +41,8 @@ void BtSuggestPieceMessageTest::testCreate() {
     bittorrent::createPeerMessageString(msg, sizeof(msg), 6, 13);
     BtSuggestPieceMessage::create(&msg[4], 2);
     CPPUNIT_FAIL("exception must be thrown.");
-  } catch(...) {
+  }
+  catch (...) {
   }
   // case: id is wrong
   try {
@@ -50,22 +50,25 @@ void BtSuggestPieceMessageTest::testCreate() {
     bittorrent::createPeerMessageString(msg, sizeof(msg), 5, 14);
     BtSuggestPieceMessage::create(&msg[4], 1);
     CPPUNIT_FAIL("exception must be thrown.");
-  } catch(...) {
+  }
+  catch (...) {
   }
 }
 
-void BtSuggestPieceMessageTest::testCreateMessage() {
+void BtSuggestPieceMessageTest::testCreateMessage()
+{
   BtSuggestPieceMessage msg;
   msg.setIndex(12345);
   unsigned char data[9];
   bittorrent::createPeerMessageString(data, sizeof(data), 5, 13);
   bittorrent::setIntParam(&data[5], 12345);
-  unsigned char* rawmsg = msg.createMessage();
-  CPPUNIT_ASSERT(memcmp(rawmsg, data, 9) == 0);
-  delete [] rawmsg;
+  auto rawmsg = msg.createMessage();
+  CPPUNIT_ASSERT_EQUAL((size_t)9, rawmsg.size());
+  CPPUNIT_ASSERT(std::equal(std::begin(rawmsg), std::end(rawmsg), data));
 }
 
-void BtSuggestPieceMessageTest::testToString() {
+void BtSuggestPieceMessageTest::testToString()
+{
   BtSuggestPieceMessage msg;
   msg.setIndex(12345);
 

@@ -41,14 +41,14 @@
 
 namespace aria2 {
 
-class ContentTypeRequestGroupCriteria:public RequestGroupCriteria
-{
+class ContentTypeRequestGroupCriteria : public RequestGroupCriteria {
 private:
-  const char** contentTypes_;
-  const char** extensions_;
+  const char* const* contentTypes_;
+  const char* const* extensions_;
+
 public:
-  ContentTypeRequestGroupCriteria(const char** contentTypes,
-                                  const char** extensions);
+  ContentTypeRequestGroupCriteria(const char* const* contentTypes,
+                                  const char* const* extensions);
 
   virtual ~ContentTypeRequestGroupCriteria();
 

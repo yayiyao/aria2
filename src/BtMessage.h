@@ -50,10 +50,11 @@ class BtEvent;
 class BtMessage {
 private:
   uint8_t id_;
-public:
-  BtMessage(uint8_t id):id_(id) {}
 
-  virtual ~BtMessage() {}
+public:
+  BtMessage(uint8_t id) : id_(id) {}
+
+  virtual ~BtMessage() = default;
 
   virtual bool isInvalidate() = 0;
 
@@ -67,18 +68,17 @@ public:
 
   virtual void validate() = 0;
 
-  virtual void onAbortOutstandingRequestEvent
-  (const BtAbortOutstandingRequestEvent& event) = 0;
+  virtual void onAbortOutstandingRequestEvent(
+      const BtAbortOutstandingRequestEvent& event) = 0;
 
-  virtual void onCancelSendingPieceEvent
-  (const BtCancelSendingPieceEvent& event) = 0;
+  virtual void
+  onCancelSendingPieceEvent(const BtCancelSendingPieceEvent& event) = 0;
 
   virtual void onChokingEvent(const BtChokingEvent& event) = 0;
 
   virtual void onQueued() = 0;
 
   virtual std::string toString() const = 0;
-
 };
 
 } // namespace aria2

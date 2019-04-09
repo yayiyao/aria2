@@ -32,12 +32,6 @@
 #  - $ ln -s ../makerelease-os.mk Makefile
 #  - $ make
 #
-# To make an universal build (x86_64, i686) use instead:
-#  - $ make universal
-#
-# To make an both builds use instead:
-#  - $ make multi
-#
 # If you haven't checkout out a release tag, you need to specify NON_RELEASE.
 # $ export NON_RELEASE=1
 # to generate a dist with git commit
@@ -91,14 +85,14 @@ endif
 # Set up compiler.
 CC = cc
 export CC
-CXX = c++
+CXX = c++ -stdlib=libc++
 export CXX
 
 # Set up compiler/linker flags.
 OPTFLAGS ?= -Os
-CFLAGS ?= -mmacosx-version-min=10.7 $(OPTFLAGS)
+CFLAGS ?= -mmacosx-version-min=10.10 $(OPTFLAGS)
 export CFLAGS
-CXXFLAGS ?= -mmacosx-version-min=10.7 $(OPTFLAGS)
+CXXFLAGS ?= -mmacosx-version-min=10.10 $(OPTFLAGS)
 export CXXFLAGS
 LDFLAGS ?= -Wl,-dead_strip
 export LDFLAGS
@@ -106,34 +100,53 @@ export LDFLAGS
 LTO_FLAGS = -flto -ffunction-sections -fdata-sections
 
 # Dependency versions
-zlib_version = 1.2.8
-zlib_hash = a4d316c404ff54ca545ea71a27af7dbc29817088
+zlib_version = 1.2.11
+zlib_hash = e6d119755acdf9104d7ba236b1242696940ed6dd
 zlib_url = http://zlib.net/zlib-$(zlib_version).tar.gz
 
-expat_version = 2.1.0
-expat_hash = b08197d146930a5543a7b99e871cba3da614f6f0
-expat_url = http://sourceforge.net/projects/expat/files/expat/$(expat_version)/expat-$(expat_version).tar.gz
+expat_version = 2.2.0
+expat_hash = 8453bc52324be4c796fd38742ec48470eef358b3
+expat_url = http://sourceforge.net/projects/expat/files/expat/$(expat_version)/expat-$(expat_version).tar.bz2
 expat_cflags=$(LTO_FLAGS)
 expat_ldflags=$(CFLAGS) $(LTO_FLAGS)
 
-cares_version = 1.10.0
-cares_hash = e44e6575d5af99cb3a38461486e1ee8b49810eb5
-cares_url = http://c-ares.haxx.se/download/c-ares-$(cares_version).tar.gz
+cares_version = 1.13.0
+cares_hash = dde50284cc3d505fb2463ff6276e61d5531b1d68
+cares_url = https://c-ares.haxx.se/download/c-ares-$(cares_version).tar.gz
 cares_confflags = "--enable-optimize=$(OPTFLAGS)"
 cares_cflags=$(LTO_FLAGS)
 cares_ldflags=$(CFLAGS) $(LTO_FLAGS)
 
-sqlite_version = autoconf-3081002
-sqlite_hash = c2f2c17d3dc4c4e179d35cc04e4420636d48a152
-sqlite_url = http://sqlite.org/2015/sqlite-$(sqlite_version).tar.gz
+sqlite_version = autoconf-3190300
+sqlite_hash = 58f2cabffb3ff4761a3ac7f834d9db7b46307c1f
+sqlite_url = https://sqlite.org/2017/sqlite-$(sqlite_version).tar.gz
 sqlite_cflags=$(LTO_FLAGS)
 sqlite_ldflags=$(CFLAGS) $(LTO_FLAGS)
 
-gmp_version = 5.1.3
-gmp_hash = b35928e2927b272711fdfbf71b7cfd5f86a6b165
+gmp_version = 6.1.2
+gmp_hash = 366ded6a44cd108ba6b3f5b9a252eab3f3a95cdf
 gmp_url = https://ftp.gnu.org/gnu/gmp/gmp-$(gmp_version).tar.bz2
-gmp_confflags = --disable-cxx --enable-assembly --with-pic
-gmp_confflags_x86_64 = --enable-fat
+gmp_confflags = --disable-cxx --enable-assembly --with-pic --enable-fat
+
+libgpgerror_version = 1.21
+libgpgerror_hash = ef1dfb2f8761f019091180596e9e638d8cc37513
+libgpgerror_url = https://gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-$(libgpgerror_version).tar.bz2
+libgpgerror_cflags=$(LTO_FLAGS)
+libgpgerror_ldflags=$(CFLAGS) $(LTO_FLAGS)
+libgpgerror_confflags = --with-pic --disable-languages --disable-doc --disable-nls
+
+libgcrypt_version = 1.6.5
+libgcrypt_hash = c3a5a13e717f7b3e3895650afc1b6e0d3fe9c726
+libgcrypt_url = https://gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-$(libgcrypt_version).tar.bz2
+libgcrypt_confflags=--with-gpg-error-prefix=$(PWD)/arch --disable-O-flag-munging --disable-asm --disable-amd64-as-feature-detection
+
+libssh2_version = 1.8.0
+libssh2_hash = baf2d1fb338eee531ba9b6b121c64235e089e0f5
+libssh2_url = https://www.libssh2.org/download/libssh2-$(libssh2_version).tar.gz
+libssh2_cflags=$(LTO_FLAGS)
+libssh2_ldflags=$(CFLAGS) $(LTO_FLAGS)
+libssh2_confflags = --with-pic --without-openssl --with-libgcrypt=$(PWD)/arch --with-libgcrypt-prefix=$(PWD)/arch
+libssh2_nocheck = yes
 
 cppunit_version = 1.12.1
 cppunit_hash = f1ab8986af7a1ffa6760f4bacf5622924639bf4a
@@ -141,7 +154,7 @@ cppunit_url = http://sourceforge.net/projects/cppunit/files/cppunit/$(cppunit_ve
 
 
 # ARCHLIBS that can be template build
-ARCHLIBS = expat cares sqlite gmp cppunit
+ARCHLIBS = expat cares sqlite gmp libgpgerror libgcrypt libssh2 cppunit
 # NONARCHLIBS that cannot be template build
 NONARCHLIBS = zlib
 
@@ -154,7 +167,7 @@ PREV_TAG := $(shell git describe --abbrev=0 $(THIS_TAG)~1)
 # Aria2 setup
 ARIA2 := aria2-$(VERSION)
 ARIA2_PREFIX := $(PWD)/$(ARIA2)
-ARIA2_DIST := $(PWD)/$(ARIA2)-osx-darwin
+ARIA2_DIST := $(PWD)/$(ARIA2)-osx-darwin$(BUILD)
 ARIA2_CONFFLAGS = \
         --enable-static \
         --disable-shared \
@@ -167,11 +180,12 @@ ARIA2_CONFFLAGS = \
         --with-libz \
         --with-libexpat \
         --with-libcares \
+        --with-libgcrypt \
+        --with-libssh2 \
         --without-libuv \
         --without-gnutls \
         --without-openssl \
         --without-libnettle \
-        --without-libgcrypt \
         --without-libxml2 \
         ARIA2_STATIC=yes
 ARIA2_DOCDIR = $(ARIA2_PREFIX)/share/doc/aria2
@@ -223,14 +237,14 @@ CPUS = $(shell sysctl hw.ncpu | cut -d" " -f2)
 # default target
 all::
 
-universal all::
+all::
 	@if test "x$(NON_RELEASE)" = "x" && !(git describe --tags --exact); then \
 		echo 'Not on a release tag; override by defining NON_RELEASE!'; \
 		exit 1; \
 	fi
 
 # No dice without sphinx
-universal all::
+all::
 	@if test "x$$(which sphinx-build)" = "x"; then \
 		echo "sphinx-build not present"; \
 		exit 1; \
@@ -263,8 +277,14 @@ deps::
 
 .PRECIOUS: cares.stamp
 cares.stamp: cares.tar.gz cares.check
-	tar xzf $<
+	tar xf $<
 	mv c-ares-$($(basename $@)_version) $(basename $@)
+	touch $@
+
+.PRECIOUS: libgpgerror.stamp
+libgpgerror.stamp: libgpgerror.tar.gz libgpgerror.check
+	tar xf $<
+	mv libgpg-error-$($(basename $@)_version) $(basename $@)
 	touch $@
 
 # Using (NON)ARCH_template kinda stinks, but real multi-target pattern rules
@@ -272,11 +292,8 @@ cares.stamp: cares.tar.gz cares.check
 define NONARCH_template
 $(1).build: $(1).x86_64.build
 
-$(1).universal.build: $(1).x86_64.build $(1).i686.build
-
 deps:: $(1).build
 
-deps.universal:: $(1).universal.build
 endef
 
 .PRECIOUS: zlib.%.build
@@ -286,7 +303,7 @@ zlib.%.build: zlib.stamp
 	$(eval ARCH := $(subst .,,$(suffix $(DEST))))
 	rsync -a $(BASE)/ $(DEST)
 	( cd $(DEST) && ./configure \
-		--static --prefix=$(PWD)/$(ARCH) \
+		--static --prefix=$(PWD)/arch \
 		)
 	$(MAKE) -C $(DEST) -sj$(CPUS) CFLAGS="$(CFLAGS) $(LTO_FLAGS) -arch $(ARCH)"
 	$(MAKE) -C $(DEST) -sj$(CPUS) CFLAGS="$(CFLAGS) $(LTO_FLAGS) -arch $(ARCH)" check
@@ -302,33 +319,29 @@ $(1).%.build: $(1).stamp
 	$$(eval ARCH := $$(subst .,,$$(suffix $$(DEST))))
 	mkdir -p $$(DEST)
 	( cd $$(DEST) && ../$(1)/configure \
-		--host=$$(ARCH)-apple-darwin11.4.2 \
-		--build=$$(ARCH)-apple-darwin11.4.2 \
 		--enable-static --disable-shared \
-		--prefix=$$(PWD)/$$(ARCH) \
-		$$($(1)_confflags) $$($(1)_confflags_$$(ARCH)) \
+		--prefix=$(PWD)/arch \
+		$$($(1)_confflags) \
 		CFLAGS="$$(CFLAGS) $$($(1)_cflags) -arch $$(ARCH)" \
-		CXXFLAGS="$$(CXXFLAGS) $$($(1)_cxxflags) -arch $$(ARCH) -stdlib=libc++ -std=c++11" \
+		CXXFLAGS="$$(CXXFLAGS) $$($(1)_cxxflags) -arch $$(ARCH) -std=c++11" \
 		LDFLAGS="$(LDFLAGS) $$($(1)_ldflags)" \
+		PKG_CONFIG_PATH=$$(PWD)/arch/lib/pkgconfig \
 		)
 	$$(MAKE) -C $$(DEST) -sj$(CPUS)
-	$$(MAKE) -C $$(DEST) -sj$(CPUS) check
+	if test -z '$$($(1)_nocheck)'; then $$(MAKE) -C $$(DEST) -sj$(CPUS) check; fi
 	$$(MAKE) -C $$(DEST) -s install
 	touch $$@
 
 $(1).build: $(1).x86_64.build
 
-$(1).universal.build: $(1).x86_64.build $(1).i686.build
-
 deps:: $(1).build
 
-deps.universal:: $(1).universal.build
 endef
 
 $(foreach lib,$(ARCHLIBS),$(eval $(call ARCH_template,$(lib))))
 
 .PRECIOUS: aria2.%.build
-aria2.%.build: zlib.%.build expat.%.build gmp.%.build cares.%.build sqlite.%.build cppunit.%.build
+aria2.%.build: zlib.%.build expat.%.build gmp.%.build cares.%.build sqlite.%.build libgpgerror.%.build libgcrypt.%.build libssh2.%.build cppunit.%.build
 	$(eval DEST := $$(basename $$@))
 	$(eval ARCH := $$(subst .,,$$(suffix $$(DEST))))
 	mkdir -p $(DEST)
@@ -336,12 +349,12 @@ aria2.%.build: zlib.%.build expat.%.build gmp.%.build cares.%.build sqlite.%.bui
 		--prefix=$(ARIA2_PREFIX) \
 		--bindir=$(PWD)/$(DEST) \
 		--sysconfdir=/etc \
-		--with-cppunit-prefix=$(PWD)/$(ARCH) \
+		--with-cppunit-prefix=$(PWD)/arch \
 		$(ARIA2_CONFFLAGS) \
-		CFLAGS="$(CFLAGS) $(LTO_FLAGS) -arch $(ARCH) -I$(PWD)/$(ARCH)/include" \
-		CXXFLAGS="$(CXXFLAGS) $(LTO_FLAGS) -arch $(ARCH) -I$(PWD)/$(ARCH)/include" \
-		LDFLAGS="$(LDFLAGS) $(CXXFLAGS) $(LTO_FLAGS) -L$(PWD)/$(ARCH)/lib" \
-		PKG_CONFIG_PATH=$(PWD)/$(ARCH)/lib/pkgconfig \
+		CFLAGS="$(CFLAGS) $(LTO_FLAGS) -arch $(ARCH) -I$(PWD)/arch/include" \
+		CXXFLAGS="$(CXXFLAGS) $(LTO_FLAGS) -arch $(ARCH) -I$(PWD)/arch/include" \
+		LDFLAGS="$(LDFLAGS) $(CXXFLAGS) $(LTO_FLAGS) -L$(PWD)/arch/lib" \
+		PKG_CONFIG_PATH=$(PWD)/arch/lib/pkgconfig \
 		)
 	$(MAKE) -C $(DEST) -sj$(CPUS)
 	$(MAKE) -C $(DEST) -sj$(CPUS) check
@@ -356,19 +369,6 @@ aria2.build: aria2.x86_64.build
 	arch -64 $(ARIA2_PREFIX)/bin/aria2c -v
 	touch $@
 
-aria2.universal.build: aria2.x86_64.build aria2.i686.build
-	mkdir -p $(ARIA2_PREFIX)/bin
-	# Got two binaries now. Merge them into one universal binary and remove
-	# the old ones.
-	lipo \
-		-arch x86_64 aria2.x86_64/aria2c \
-		-arch i686 aria2.i686/aria2c \
-		-create -output $(ARIA2_PREFIX)/bin/aria2c
-	# Basic sanity check
-	arch -64 $(ARIA2_PREFIX)/bin/aria2c -v
-	arch -32 $(ARIA2_PREFIX)/bin/aria2c -v
-	touch $@
-
 $(ARIA2_CHANGELOG): aria2.x86_64.build
 	git log --pretty=fuller --date=short $(PREV_TAG)..HEAD > $@
 
@@ -378,41 +378,10 @@ $(ARIA2_DOCS): aria2.x86_64.build
 $(ARIA2_DIST).tar.bz2: aria2.build $(ARIA2_DOCS) $(ARIA2_CHANGELOG)
 	find $(ARIA2_PREFIX) -exec touch "{}" \;
 	tar -cf $@ \
-		--use-compress-program=bzip2 \
-		--options='compression-level=9' \
-		$(ARIA2)
-
-$(ARIA2_DIST).universal.tar.bz2: aria2.universal.build $(ARIA2_DOCS) $(ARIA2_CHANGELOG)
-	find $(ARIA2_PREFIX) -exec touch "{}" \;
-	tar -cf $@ \
-		--use-compress-program=bzip2 \
-		--options='compression-level=9' \
+		--use-compress-program="bzip2 -9" \
 		$(ARIA2)
 
 $(ARIA2_DIST).pkg: aria2.build $(ARIA2_DOCS) $(ARIA2_CHANGELOG)
-	find $(ARIA2_PREFIX) -exec touch "{}" \;
-	pkgbuild \
-		--root $(ARIA2) \
-		--identifier aria2 \
-		--version $(VERSION) \
-		--install-location /usr/local/aria2 \
-		--ownership recommended \
-		out.pkg
-	pkgbuild \
-		--root $(SRCDIR)/osx-package/etc \
-		--identifier aria2.paths \
-		--version $(VERSION) \
-		--install-location /etc \
-		--ownership recommended \
-		paths.pkg
-	echo "$$ARIA2_DISTXML" > dist.xml
-	productbuild \
-		--distribution dist.xml \
-		--resources $(ARIA2_PREFIX)/share/doc/aria2 \
-		$@
-	rm -rf out.pkg paths.pkg dist.xml
-
-$(ARIA2_DIST).universal.pkg: aria2.universal.build $(ARIA2_DOCS) $(ARIA2_CHANGELOG)
 	find $(ARIA2_PREFIX) -exec touch "{}" \;
 	pkgbuild \
 		--root $(ARIA2) \
@@ -439,7 +408,7 @@ $(ARIA2_DIST).dmg: $(ARIA2_DIST).pkg
 	-rm -rf dmg
 	mkdir -p dmg/Docs
 	cp -av $(ARIA2_DIST).pkg dmg/aria2.pkg
-	find $(ARIA2_PREFIX)/share/doc/aria2 -type f -depth 1 -exec cp -av "{}" dmg/Docs \;
+	find $(ARIA2_PREFIX)/share/doc/aria2 -maxdepth 1 -type f -exec cp -av "{}" dmg/Docs \;
 	rm -rf dmg/Docs/README dmg/Docs/README.rst
 	cp $(SRCDIR)/osx-package/DS_Store dmg/.DS_Store
 	hdiutil create $@.uncompressed \
@@ -450,34 +419,11 @@ $(ARIA2_DIST).dmg: $(ARIA2_DIST).pkg
 	hdiutil flatten $@
 	rm -rf $@.uncompressed.dmg dmg
 
-$(ARIA2_DIST).universal.dmg: $(ARIA2_DIST).universal.pkg
-	-rm -rf dmg
-	mkdir -p dmg/Docs
-	cp -av $(ARIA2_DIST).universal.pkg dmg/aria2.pkg
-	find $(ARIA2_PREFIX)/share/doc/aria2 -type f -depth 1 -exec cp -av "{}" dmg/Docs \;
-	rm -rf dmg/Docs/README dmg/Docs/README.rst
-	cp $(SRCDIR)/osx-package/DS_Store dmg/.DS_Store
-	hdiutil create $@.uncompressed \
-		-srcfolder dmg \
-		-volname "aria2 $(VERSION) Intel Universal" \
-		-ov
-	hdiutil convert -format UDBZ -o $@ $@.uncompressed.dmg
-	hdiutil flatten $@
-	rm -rf $@.uncompressed.dmg dmg
-
 dist.build: $(ARIA2_DIST).tar.bz2 $(ARIA2_DIST).pkg $(ARIA2_DIST).dmg
 	echo 'Build success: $(ARIA2_DIST)'
 	touch $@
 
-dist.universal.build: $(ARIA2_DIST).universal.tar.bz2 $(ARIA2_DIST).universal.pkg $(ARIA2_DIST).universal.dmg
-	echo 'Build success: $(ARIA2_DIST)'
-	touch $@
-
 all:: dist.build
-
-universal:: dist.universal.build
-
-multi: all universal
 
 clean-dist:
 	rm -rf $(ARIA2_DIST).tar.bz2 $(ARIA2_DIST).pkg $(ARIA2_DIST).dmg
@@ -486,10 +432,10 @@ clean: clean-dist
 	rm -rf *aria2*
 
 cleaner: clean
-	rm -rf *.build *.check *.stamp $(ARCHLIBS) $(NONARCHLIBS) *x86_64* *i686*
+	rm -rf *.build *.check *.stamp $(ARCHLIBS) $(NONARCHLIBS) arch *.x86_64
 
 really-clean: cleaner
 	rm -rf *.tar.*
 
 
-.PHONY: all universal multi clean-dist clean cleaner really-clean
+.PHONY: all multi clean-dist clean cleaner really-clean

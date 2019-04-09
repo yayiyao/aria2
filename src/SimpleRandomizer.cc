@@ -45,34 +45,32 @@
 #include "LogFactory.h"
 #include "fmt.h"
 
-#ifdef HAVE_GETRANDOM_INTERFACE
-#  include <errno.h>
-#  include <linux/errno.h>
-#  include "getrandom_linux.h"
-#endif
-
 namespace aria2 {
 
 std::unique_ptr<SimpleRandomizer> SimpleRandomizer::randomizer_;
 
 const std::unique_ptr<SimpleRandomizer>& SimpleRandomizer::getInstance()
 {
-  if(!randomizer_) {
+  if (!randomizer_) {
     randomizer_.reset(new SimpleRandomizer());
   }
   return randomizer_;
 }
 
+namespace {
+std::random_device rd;
+} // namespace
+
+#ifdef __MINGW32__
 SimpleRandomizer::SimpleRandomizer()
 {
-#ifdef __MINGW32__
-  BOOL r = ::CryptAcquireContext(
-      &provider_,
-      0, 0, PROV_RSA_FULL,
-      CRYPT_VERIFYCONTEXT | CRYPT_SILENT);
+  BOOL r = ::CryptAcquireContext(&provider_, 0, 0, PROV_RSA_FULL,
+                                 CRYPT_VERIFYCONTEXT | CRYPT_SILENT);
   assert(r);
-#endif
 }
+#else  // !__MINGW32__
+SimpleRandomizer::SimpleRandomizer() : gen_(rd()) {}
+#endif // !__MINGW32__
 
 SimpleRandomizer::~SimpleRandomizer()
 {
@@ -92,41 +90,15 @@ void SimpleRandomizer::getRandomBytes(unsigned char* buf, size_t len)
 #ifdef __MINGW32__
   BOOL r = CryptGenRandom(provider_, len, reinterpret_cast<BYTE*>(buf));
   assert(r);
-#else // ! __MINGW32__
-#if defined(HAVE_GETRANDOM_INTERFACE)
-  static bool have_random_support = true;
-  if (have_random_support) {
-    auto rv = getrandom_linux(buf, len);
-    if (rv != -1
-#ifdef ENOSYS
-        /* If the system does not know ENOSYS at this point, just leave the
-         * check out. If the call failed, we'll not take this branch at all
-         * and disable support below.
-         */
-        || errno != ENOSYS
-#endif
-        ) {
-      if (rv < -1) {
-        A2_LOG_ERROR(fmt("Failed to produce randomness: %d", errno));
-      }
-      // getrandom is not supposed to fail, ever, so, we want to assert here.
-      assert(rv >= 0 && (size_t)rv == len);
-      return;
-    }
-    have_random_support = false;
-    A2_LOG_INFO("Disabled getrandom support, because kernel does not "\
-        "implement this feature (ENOSYS)");
-  }
-  // Fall through to generic implementation
-#endif // defined(HAVE_GETRANDOM_INTERFACE)
+#else  // ! __MINGW32__
   auto ubuf = reinterpret_cast<result_type*>(buf);
   size_t q = len / sizeof(result_type);
-  auto gen = std::uniform_int_distribution<result_type>();
-  for(; q > 0; --q, ++ubuf) {
-    *ubuf = gen(dev_);
+  auto dis = std::uniform_int_distribution<result_type>();
+  for (; q > 0; --q, ++ubuf) {
+    *ubuf = dis(gen_);
   }
   const size_t r = len % sizeof(result_type);
-  auto last = gen(dev_);
+  auto last = dis(gen_);
   memcpy(ubuf, &last, r);
 #endif // ! __MINGW32__
 }

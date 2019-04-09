@@ -37,21 +37,19 @@
 
 namespace aria2 {
 
-DefaultStreamPieceSelector::DefaultStreamPieceSelector
-(BitfieldMan* bitfieldMan)
-  : bitfieldMan_(bitfieldMan)
-{}
-
-DefaultStreamPieceSelector::~DefaultStreamPieceSelector() {}
-
-bool DefaultStreamPieceSelector::select
-(size_t& index,
- size_t minSplitSize,
- const unsigned char* ignoreBitfield,
- size_t length)
+DefaultStreamPieceSelector::DefaultStreamPieceSelector(BitfieldMan* bitfieldMan)
+    : bitfieldMan_(bitfieldMan)
 {
-  return bitfieldMan_->getSparseMissingUnusedIndex
-    (index, minSplitSize, ignoreBitfield, length);
+}
+
+DefaultStreamPieceSelector::~DefaultStreamPieceSelector() = default;
+
+bool DefaultStreamPieceSelector::select(size_t& index, size_t minSplitSize,
+                                        const unsigned char* ignoreBitfield,
+                                        size_t length)
+{
+  return bitfieldMan_->getSparseMissingUnusedIndex(index, minSplitSize,
+                                                   ignoreBitfield, length);
 }
 
 void DefaultStreamPieceSelector::onBitfieldInit() {}

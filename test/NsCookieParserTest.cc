@@ -11,12 +11,13 @@
 
 namespace aria2 {
 
-class NsCookieParserTest:public CppUnit::TestFixture {
+class NsCookieParserTest : public CppUnit::TestFixture {
 
   CPPUNIT_TEST_SUITE(NsCookieParserTest);
   CPPUNIT_TEST(testParse);
   CPPUNIT_TEST(testParse_fileNotFound);
   CPPUNIT_TEST_SUITE_END();
+
 public:
   void setUp() {}
 
@@ -26,14 +27,13 @@ public:
   void testParse_fileNotFound();
 };
 
-
 CPPUNIT_TEST_SUITE_REGISTRATION(NsCookieParserTest);
 
 void NsCookieParserTest::testParse()
 {
   NsCookieParser parser;
   time_t now = 0;
-  auto cookies = parser.parse(A2_TEST_DIR"/nscookietest.txt", now);
+  auto cookies = parser.parse(A2_TEST_DIR "/nscookietest.txt", now);
   CPPUNIT_ASSERT_EQUAL((size_t)5, cookies.size());
 
   auto c = cookies[0].get();
@@ -69,9 +69,9 @@ void NsCookieParserTest::testParse()
   c = cookies[3].get();
   CPPUNIT_ASSERT_EQUAL(std::string("TAX"), c->getName());
   CPPUNIT_ASSERT_EQUAL(std::string("1000"), c->getValue());
-  CPPUNIT_ASSERT((time_t)INT32_MAX <= c->getExpiryTime());
+  CPPUNIT_ASSERT_EQUAL((time_t)1463304912, c->getExpiryTime());
   CPPUNIT_ASSERT(c->getPersistent());
-  CPPUNIT_ASSERT_EQUAL(std::string("overflow"), c->getDomain());
+  CPPUNIT_ASSERT_EQUAL(std::string("something"), c->getDomain());
   CPPUNIT_ASSERT(c->getHostOnly());
   CPPUNIT_ASSERT_EQUAL(std::string("/"), c->getPath());
   CPPUNIT_ASSERT(!c->getSecure());
@@ -94,7 +94,8 @@ void NsCookieParserTest::testParse_fileNotFound()
     time_t now = 0;
     parser.parse("fileNotFound", now);
     CPPUNIT_FAIL("exception must be thrown.");
-  } catch(RecoverableException& e) {
+  }
+  catch (RecoverableException& e) {
     // SUCCESS
   }
 }

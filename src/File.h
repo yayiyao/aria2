@@ -55,6 +55,7 @@ private:
    * Returns the return value of stat(...)
    */
   int fillStat(a2_struct_stat& fstat);
+
 public:
   File(const std::string& name);
 
@@ -68,6 +69,13 @@ public:
    * Tests whether the file or directory denoted by name exists.
    */
   bool exists();
+
+  /**
+   * Tests whether the file or directory denoted by name exists.  If
+   * file does not exist, or file status could not be retrieved, this
+   * function stores error message to |err|.
+   */
+  bool exists(std::string& err);
 
   /**
    * Tests whether the file denoted by name is a regular file.
@@ -102,10 +110,7 @@ public:
 
   std::string getDirname() const;
 
-  const std::string& getPath() const
-  {
-    return name_;
-  }
+  const std::string& getPath() const { return name_; }
 
   static bool isDir(const std::string& filename);
 

@@ -1,77 +1,52 @@
-aria2 1.19.0
+aria2 1.34.0
 ============
 
 Release Note
 ------------
 
-This releases adds SFTP support, and fixes several bugs.  SFTP support
-has been implemented using libssh2.  We added several new options.
---multiple-interface option is like --interface option, but can take
-several interfaces.  They are used in round-robin manner, and it works
-like link aggregation.  Previously, .netrc search path is fixed under
-$HOME directory, and cannot be changed.  In this release, --netrc-path
-option has been added to override the search path.  The runtime bug
-concerning getrandom has been fixed in this release.  Previously if
-download failed because checksum error, aria2 exited with error code 1
-(unknown error).  Now it exits with dedicated error code 32.  We fixed
-long outstanding bug that aria2 crashes when downloading multi-file
-torrent.
+This release fixes several bugs.  See Changes for details.
 
 Changes
 -------
 
-* android: Build and link with zlib
+* mingw: Use SetFileTime to avoid DST adjustment
 
-  Previously, we linked with zlib shipped with NDK, but it seems this
-  is not part of NDK API, and thus could break our app.
+  GH-1079
 
-* Allow netrc-path to be specified in the config file
+* UnknownLengthPieceStorage: return piece length
 
-  Adds --netrc-path to override default .netrc search path.  Patch
-  from Ryan Steinmetz
+  show something in console status when downloading items
+  with unknown content length
 
-* Exit with 32 status code if checksum verification failed
+  Patch from kwkam
 
-* Add SFTP support using libssh2
+  GH-1065
 
-  aria2 can now download files via sftp protocol: aria2c sftp://....
-  --ssh-host-key-md option is added to specify expected server's
-  fingerprint.
+* WinConsoleFile: fix colour properly
 
-* Added Dockerfile to cross complile aria2 for RaspberryPI (armhf)
+  Patch from kwkam
 
-  Patch from Igor Khomyakov
+  GH-1058
 
-* multiple interface support for link aggregation
+* util: also detect xdg_* env variables on windows
 
-  Adds --multiple-interface option.  Patch from Sarim Khan
+  so if people like to keep FHS they could define XDG_* for it
 
-* Run on-bt-download-complete command when -V reports download finished
+  Patch from kwkam
 
-  Fixes GH-355
+  GH-1057
 
-* Use dedicated DiskWriter in MultiDiskFileAllocationIterator
+* MacOS: Allocate once (apfs compat)
 
-  We have to use dedicated DiskWriter instead of
-  (*entryItr_)->getDiskWriter().  This is because
-  SingleFileAllocationIterator cannot reopen file if file is closed by
-  OpenedFileCounter.  Fixes GH-350
+* Fix bug that signal handler does not work with libaria2
 
-* Fix getrandom for system with libc not including errno or systems
+  This commit fixes the bug that signal handler does not work with
+  libaria2 when aria2::RUN_ONCE is passed to aria2::run().
 
-  not supporting ENOSYS in the first place.  Fixes GH-347
+  GH-1053
 
-* Don't send back rpc-secret option value in aria2.getGlobalOption RPC
-  method
+* Retry on HTTP 502
 
-* Make libuv default off
+  Patch from nicolov
 
-  See GH-241 for discussion
-
-* Fixed slow RPC response
-
-  Fxies GH-345
-
-* Fix getrandom interface detection
-
-  Fixes GH-346
+  GH-1038

@@ -67,30 +67,30 @@ class FloodingStat {
 private:
   int chokeUnchokeCount;
   int keepAliveCount;
-public:
-  FloodingStat():chokeUnchokeCount(0), keepAliveCount(0) {}
 
-  void incChokeUnchokeCount() {
-    if(chokeUnchokeCount < INT_MAX) {
+public:
+  FloodingStat() : chokeUnchokeCount(0), keepAliveCount(0) {}
+
+  void incChokeUnchokeCount()
+  {
+    if (chokeUnchokeCount < INT_MAX) {
       ++chokeUnchokeCount;
     }
   }
 
-  void incKeepAliveCount() {
-    if(keepAliveCount < INT_MAX) {
+  void incKeepAliveCount()
+  {
+    if (keepAliveCount < INT_MAX) {
       ++keepAliveCount;
     }
   }
 
-  int getChokeUnchokeCount() const {
-    return chokeUnchokeCount;
-  }
+  int getChokeUnchokeCount() const { return chokeUnchokeCount; }
 
-  int getKeepAliveCount() const {
-    return keepAliveCount;
-  }
+  int getKeepAliveCount() const { return keepAliveCount; }
 
-  void reset() {
+  void reset()
+  {
     chokeUnchokeCount = 0;
     keepAliveCount = 0;
   }
@@ -124,8 +124,10 @@ private:
 
   DHTNode* localNode_;
 
+  // The last haveIndex we have advertised to the peer.
+  uint64_t lastHaveIndex_;
+
   size_t allowedFastSetSize_;
-  Timer haveTimer_;
   Timer keepAliveTimer_;
   Timer floodingTimer_;
   FloodingStat floodingStat_;
@@ -143,9 +145,6 @@ private:
   RequestGroupMan* requestGroupMan_;
 
   uint16_t tcpPort_;
-
-  std::vector<size_t> haveIndexes_;
-  Timer haveLastSent_;
 
   void addBitfieldMessageToQueue();
   void addAllowedFastMessageToQueue();
@@ -169,11 +168,11 @@ public:
 
   virtual void initiateHandshake() CXX11_OVERRIDE;
 
-  virtual std::unique_ptr<BtHandshakeMessage> receiveHandshake
-  (bool quickReply = false) CXX11_OVERRIDE;
+  virtual std::unique_ptr<BtHandshakeMessage>
+  receiveHandshake(bool quickReply = false) CXX11_OVERRIDE;
 
-  virtual std::unique_ptr<BtHandshakeMessage> receiveAndSendHandshake()
-    CXX11_OVERRIDE;
+  virtual std::unique_ptr<BtHandshakeMessage>
+  receiveAndSendHandshake() CXX11_OVERRIDE;
 
   virtual void doPostHandshakeProcessing() CXX11_OVERRIDE;
 
@@ -193,10 +192,7 @@ public:
 
   virtual size_t countOutstandingRequest() CXX11_OVERRIDE;
 
-  void setCuid(cuid_t cuid)
-  {
-    cuid_ = cuid;
-  }
+  void setCuid(cuid_t cuid) { cuid_ = cuid; }
 
   void setBtRuntime(const std::shared_ptr<BtRuntime>& btRuntime);
 
@@ -216,45 +212,34 @@ public:
 
   void setBtMessageFactory(std::unique_ptr<BtMessageFactory> factory);
 
-  void setExtensionMessageFactory
-  (std::unique_ptr<ExtensionMessageFactory> factory);
+  void
+  setExtensionMessageFactory(std::unique_ptr<ExtensionMessageFactory> factory);
 
-  void setExtensionMessageRegistry
-  (std::unique_ptr<ExtensionMessageRegistry> registry);
+  void setExtensionMessageRegistry(
+      std::unique_ptr<ExtensionMessageRegistry> registry);
 
-  void setKeepAliveInterval(std::chrono::seconds keepAliveInterval) {
+  void setKeepAliveInterval(std::chrono::seconds keepAliveInterval)
+  {
     keepAliveInterval_ = std::move(keepAliveInterval);
   }
 
-  void setUTPexEnabled(bool f)
-  {
-    utPexEnabled_ = f;
-  }
+  void setUTPexEnabled(bool f) { utPexEnabled_ = f; }
 
   void setLocalNode(DHTNode* node);
 
-  void setDHTEnabled(bool f)
-  {
-    dhtEnabled_ = f;
-  }
+  void setDHTEnabled(bool f) { dhtEnabled_ = f; }
 
   void setRequestGroupMan(RequestGroupMan* rgman);
 
-  void setUTMetadataRequestTracker
-  (std::unique_ptr<UTMetadataRequestTracker> tracker);
+  void setUTMetadataRequestTracker(
+      std::unique_ptr<UTMetadataRequestTracker> tracker);
 
-  void setUTMetadataRequestFactory
-  (std::unique_ptr<UTMetadataRequestFactory> factory);
+  void setUTMetadataRequestFactory(
+      std::unique_ptr<UTMetadataRequestFactory> factory);
 
-  void enableMetadataGetMode()
-  {
-    metadataGetMode_ = true;
-  }
+  void enableMetadataGetMode() { metadataGetMode_ = true; }
 
-  void setTcpPort(uint16_t port)
-  {
-    tcpPort_ = port;
-  }
+  void setTcpPort(uint16_t port) { tcpPort_ = port; }
 };
 
 } // namespace aria2

@@ -41,15 +41,17 @@
 #include "WrDiskCacheEntry.h"
 #include "LogFactory.h"
 #ifdef HAVE_SOME_FALLOCATE
-# include "FallocFileAllocationIterator.h"
+#  include "FallocFileAllocationIterator.h"
 #endif // HAVE_SOME_FALLOCATE
 
 namespace aria2 {
 
-AbstractSingleDiskAdaptor::AbstractSingleDiskAdaptor():
-  totalLength_(0), readOnly_(false) {}
+AbstractSingleDiskAdaptor::AbstractSingleDiskAdaptor()
+    : totalLength_(0), readOnly_(false)
+{
+}
 
-AbstractSingleDiskAdaptor::~AbstractSingleDiskAdaptor() {}
+AbstractSingleDiskAdaptor::~AbstractSingleDiskAdaptor() = default;
 
 void AbstractSingleDiskAdaptor::initAndOpenFile()
 {
@@ -61,34 +63,31 @@ void AbstractSingleDiskAdaptor::openFile()
   diskWriter_->openFile(totalLength_);
 }
 
-void AbstractSingleDiskAdaptor::closeFile()
-{
-  diskWriter_->closeFile();
-}
+void AbstractSingleDiskAdaptor::closeFile() { diskWriter_->closeFile(); }
 
 void AbstractSingleDiskAdaptor::openExistingFile()
 {
   diskWriter_->openExistingFile(totalLength_);
 }
 
-void AbstractSingleDiskAdaptor::writeData
-(const unsigned char* data, size_t len, int64_t offset)
+void AbstractSingleDiskAdaptor::writeData(const unsigned char* data, size_t len,
+                                          int64_t offset)
 {
   diskWriter_->writeData(data, len, offset);
 }
 
-ssize_t AbstractSingleDiskAdaptor::readData
-(unsigned char* data, size_t len, int64_t offset)
+ssize_t AbstractSingleDiskAdaptor::readData(unsigned char* data, size_t len,
+                                            int64_t offset)
 {
   return diskWriter_->readData(data, len, offset);
 }
 
-ssize_t AbstractSingleDiskAdaptor::readDataDropCache
-(unsigned char* data, size_t len, int64_t offset)
+ssize_t AbstractSingleDiskAdaptor::readDataDropCache(unsigned char* data,
+                                                     size_t len, int64_t offset)
 {
   auto rv = readData(data, len, offset);
 
-  if(rv > 0) {
+  if (rv > 0) {
     diskWriter_->dropCache(len, offset);
   }
 
@@ -97,48 +96,11 @@ ssize_t AbstractSingleDiskAdaptor::readDataDropCache
 
 void AbstractSingleDiskAdaptor::writeCache(const WrDiskCacheEntry* entry)
 {
-  // Write cached data in 4KiB aligned offset. This reduces disk
-  // activity especially on Windows 7 NTFS. In this code, we assume
-  // that maximum length of DataCell data is 16KiB to simplify the
-  // code.
-  unsigned char buf[16_k];
-  int64_t start = 0;
-  size_t buflen = 0;
-  size_t buffoffset = 0;
-  const WrDiskCacheEntry::DataCellSet& dataSet = entry->getDataSet();
-  for(auto & d : dataSet) {
-    if(start+static_cast<ssize_t>(buflen) < d->goff) {
-      A2_LOG_DEBUG(fmt("Cache flush goff=%" PRId64 ", len=%lu",
-                       start, static_cast<unsigned long>(buflen)));
-      writeData(buf+buffoffset, buflen-buffoffset, start);
-      start = d->goff;
-      buflen = buffoffset = 0;
-    }
-    if(buflen == 0 && (d->goff & 0xfff) == 0 && (d->len & 0xfff) == 0) {
-      // Already aligned. Write it without copy.
-      A2_LOG_DEBUG(fmt("Cache flush goff=%" PRId64 ", len=%lu",
-                       start, static_cast<unsigned long>(d->len)));
-      writeData(d->data + d->offset, d->len, start);
-      start += d->len;
-    } else {
-      if(buflen == 0) {
-        buflen = buffoffset = d->goff & 0xfff;
-      }
-      size_t wlen = std::min(sizeof(buf) - buflen, d->len);
-      memcpy(buf+buflen, d->data + d->offset, wlen);
-      buflen += wlen;
-      if(buflen == sizeof(buf)) {
-        A2_LOG_DEBUG(fmt("Cache flush goff=%" PRId64 ", len=%lu",
-                         start, static_cast<unsigned long>(buflen)));
-        writeData(buf+buffoffset, buflen-buffoffset, start);
-        memcpy(buf, d->data + d->offset + wlen, d->len - wlen);
-        start += sizeof(buf) - buffoffset;
-        buflen = d->len - wlen;
-        buffoffset = 0;
-      }
-    }
+  for (auto& d : entry->getDataSet()) {
+    A2_LOG_DEBUG(fmt("Cache flush goff=%" PRId64 ", len=%lu", d->goff,
+                     static_cast<unsigned long>(d->len)));
+    writeData(d->data + d->offset, d->len, d->goff);
   }
-  writeData(buf+buffoffset, buflen-buffoffset, start);
 }
 
 bool AbstractSingleDiskAdaptor::fileExists()
@@ -146,10 +108,7 @@ bool AbstractSingleDiskAdaptor::fileExists()
   return File(getFilePath()).exists();
 }
 
-int64_t AbstractSingleDiskAdaptor::size()
-{
-  return File(getFilePath()).size();
-}
+int64_t AbstractSingleDiskAdaptor::size() { return File(getFilePath()).size(); }
 
 void AbstractSingleDiskAdaptor::truncate(int64_t length)
 {
@@ -159,18 +118,18 @@ void AbstractSingleDiskAdaptor::truncate(int64_t length)
 std::unique_ptr<FileAllocationIterator>
 AbstractSingleDiskAdaptor::fileAllocationIterator()
 {
-  switch(getFileAllocationMethod()) {
+  switch (getFileAllocationMethod()) {
 #ifdef HAVE_SOME_FALLOCATE
-  case(DiskAdaptor::FILE_ALLOC_FALLOC):
-    return make_unique<FallocFileAllocationIterator>
-      (diskWriter_.get(), size() ,totalLength_);
+  case (DiskAdaptor::FILE_ALLOC_FALLOC):
+    return make_unique<FallocFileAllocationIterator>(diskWriter_.get(), size(),
+                                                     totalLength_);
 #endif // HAVE_SOME_FALLOCATE
-  case(DiskAdaptor::FILE_ALLOC_TRUNC):
-    return make_unique<TruncFileAllocationIterator>
-      (diskWriter_.get(), size(), totalLength_);
+  case (DiskAdaptor::FILE_ALLOC_TRUNC):
+    return make_unique<TruncFileAllocationIterator>(diskWriter_.get(), size(),
+                                                    totalLength_);
   default:
-    return make_unique<AdaptiveFileAllocationIterator>
-      (diskWriter_.get(), size(), totalLength_);
+    return make_unique<AdaptiveFileAllocationIterator>(diskWriter_.get(),
+                                                       size(), totalLength_);
   }
 }
 
@@ -186,20 +145,17 @@ void AbstractSingleDiskAdaptor::disableReadOnly()
   readOnly_ = false;
 }
 
-void AbstractSingleDiskAdaptor::enableMmap()
-{
-  diskWriter_->enableMmap();
-}
+void AbstractSingleDiskAdaptor::enableMmap() { diskWriter_->enableMmap(); }
 
 void AbstractSingleDiskAdaptor::cutTrailingGarbage()
 {
-  if(File(getFilePath()).size() > totalLength_) {
+  if (File(getFilePath()).size() > totalLength_) {
     diskWriter_->truncate(totalLength_);
   }
 }
 
-void AbstractSingleDiskAdaptor::setDiskWriter
-(std::unique_ptr<DiskWriter> diskWriter)
+void AbstractSingleDiskAdaptor::setDiskWriter(
+    std::unique_ptr<DiskWriter> diskWriter)
 {
   diskWriter_ = std::move(diskWriter);
 }

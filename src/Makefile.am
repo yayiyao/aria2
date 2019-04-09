@@ -140,6 +140,7 @@ SRCS =  \
 	InitiateConnectionCommand.cc InitiateConnectionCommand.h\
 	InitiateConnectionCommandFactory.cc InitiateConnectionCommandFactory.h\
 	InorderStreamPieceSelector.cc InorderStreamPieceSelector.h\
+	RandomStreamPieceSelector.cc RandomStreamPieceSelector.h\
 	InorderURISelector.cc InorderURISelector.h\
 	IOFile.cc IOFile.h\
 	IteratableChecksumValidator.cc IteratableChecksumValidator.h\
@@ -267,25 +268,10 @@ SRCS =  \
 	WrDiskCache.cc WrDiskCache.h\
 	WrDiskCacheEntry.cc WrDiskCacheEntry.h\
 	XmlRpcRequestParserController.cc XmlRpcRequestParserController.h\
-	OpenedFileCounter.cc OpenedFileCounter.h
-
-if ANDROID
-SRCS += android/android.c
-endif # ANDROID
-
-# Android NDK R8e does not provide ftruncate64. Use assembly code from
-# android source code and link it.
-if ANDROID_ARM
-SRCS += android/arm-ftruncate64.S
-endif # ANDROID_ARM
-
-if ANDROID_MIPS
-SRCS += android/mips-ftruncate64.S
-endif # ANDROID_MIPS
-
-if ANDROID_X86
-SRCS += android/x86-ftruncate64.S android/x86-asm.h
-endif # ANDROID_X86
+	OpenedFileCounter.cc OpenedFileCounter.h \
+	SHA1IOFile.cc SHA1IOFile.h \
+	EvictSocketPoolCommand.cc EvictSocketPoolCommand.h\
+	libssl_compat.h
 
 if MINGW_BUILD
 SRCS += WinConsoleFile.cc WinConsoleFile.h
@@ -687,10 +673,6 @@ if HAVE_KQUEUE
 SRCS += KqueueEventPoll.cc KqueueEventPoll.h
 endif # HAVE_KQUEUE
 
-if HAVE_GETRANDOM_INTERFACE
-SRCS += getrandom_linux.c getrandom_linux.h
-endif # HAVE_GETRANDOM_INTERFACE
-
 if HAVE_LIBUV
 SRCS += LibuvEventPoll.cc LibuvEventPoll.h
 endif # HAVE_LIBUV
@@ -713,11 +695,61 @@ endif # !ENABLE_LIBARIA2
 
 libaria2_la_SOURCES = $(SRCS)
 
-libaria2_la_LIBADD = @WSLAY_LIBS@ @LTLIBINTL@
 
-LDADD = libaria2.la @ALLOCA@ #-lprofiler
-#aria2c_LDFLAGS = -pg
-AM_CPPFLAGS =  -Wall\
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/intl\
 	-I$(srcdir)/includes -I$(builddir)/includes\
-	-DLOCALEDIR=\"@localedir@\" @DEFS@ #-pg
+	-DLOCALEDIR=\"@localedir@\" @DEFS@ \
+	@EXTRACPPFLAGS@ \
+	@ZLIB_CFLAGS@ \
+	@LIBUV_CFLAGS@ \
+	@LIBXML2_CFLAGS@ \
+	@EXPAT_CFLAGS@ \
+	@SQLITE3_CFLAGS@ \
+	@LIBGNUTLS_CFLAGS@ \
+	@OPENSSL_CFLAGS@ \
+	@LIBNETTLE_CFLAGS@ \
+	@LIBGMP_CFLAGS@ \
+	@LIBGCRYPT_CFLAGS@ \
+	@LIBSSH2_CFLAGS@ \
+	@LIBCARES_CFLAGS@ \
+	@WSLAY_CFLAGS@ \
+	@TCMALLOC_CFLAGS@ \
+	@JEMALLOC_CFLAGS@
+
+AM_LDFLAGS = \
+	@EXTRALDFLAGS@ \
+	@APPLETLS_LDFLAGS@
+
+EXTLDADD = @ALLOCA@ \
+	@EXTRALIBS@ \
+	@ZLIB_LIBS@ \
+	@LIBUV_LIBS@ \
+	@LIBXML2_LIBS@ \
+	@EXPAT_LIBS@ \
+	@SQLITE3_LIBS@ \
+	@WINTLS_LIBS@ \
+	@LIBGNUTLS_LIBS@ \
+	@OPENSSL_LIBS@ \
+	@LIBNETTLE_LIBS@ \
+	@LIBGMP_LIBS@ \
+	@LIBGCRYPT_LIBS@ \
+	@LIBSSH2_LIBS@ \
+	@LIBCARES_LIBS@ \
+	@WSLAY_LIBS@ \
+	@TCMALLOC_LIBS@ \
+	@JEMALLOC_LIBS@ \
+	@LTLIBINTL@
+
+LDADD = libaria2.la
+
+if ENABLE_LIBARIA2
+libaria2_la_LIBADD = $(EXTLDADD)
+else # !ENABLE_LIBARIA2
+LDADD += $(EXTLDADD)
+endif # !ENABLE_LIBARIA2
+
+AM_CFLAGS = @EXTRACFLAGS@
+
+AM_CXXFLAGS = @WARNCXXFLAGS@ @CXX1XCXXFLAGS@ @EXTRACXXFLAGS@
+

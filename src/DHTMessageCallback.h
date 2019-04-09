@@ -51,12 +51,9 @@ class DHTPingReplyMessage;
 
 class DHTMessageCallback {
 public:
-  virtual ~DHTMessageCallback() {}
+  virtual ~DHTMessageCallback() = default;
 
-  void onReceived(DHTResponseMessage* message)
-  {
-    message->accept(this);
-  }
+  void onReceived(DHTResponseMessage* message) { message->accept(this); }
 
   virtual void visit(const DHTAnnouncePeerReplyMessage* message) = 0;
 

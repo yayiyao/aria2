@@ -47,7 +47,7 @@ class BtRequestMessage;
 
 class BtRequestFactory {
 public:
-  virtual ~BtRequestFactory() {}
+  virtual ~BtRequestFactory() = default;
 
   virtual void addTargetPiece(const std::shared_ptr<Piece>& piece) = 0;
 
@@ -69,15 +69,14 @@ public:
    * returned is capped by max.  If |endGame| is true, returns
    * requests in end game mode.
    */
-  virtual std::vector<std::unique_ptr<BtRequestMessage>> createRequestMessages
-  (size_t max, bool endGame) = 0;
+  virtual std::vector<std::unique_ptr<BtRequestMessage>>
+  createRequestMessages(size_t max, bool endGame) = 0;
 
   /**
    * Returns the list of index of pieces added using addTargetPiece()
    * into indexes.
    */
   virtual std::vector<size_t> getTargetPieceIndexes() const = 0;
-
 };
 
 } // namespace aria2

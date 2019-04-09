@@ -42,6 +42,7 @@ namespace aria2 {
 class BtUnchokeMessage : public ZeroBtMessage {
 private:
   static const size_t MESSAGE_LENGTH = 5;
+
 public:
   BtUnchokeMessage();
 
@@ -49,14 +50,10 @@ public:
 
   static const char NAME[];
 
-  static std::unique_ptr<BtUnchokeMessage> create
-  (const unsigned char* data, size_t dataLength);
+  static std::unique_ptr<BtUnchokeMessage> create(const unsigned char* data,
+                                                  size_t dataLength);
 
   virtual void doReceivedAction() CXX11_OVERRIDE;
-
-  virtual bool sendPredicate() const CXX11_OVERRIDE;
-
-  virtual std::unique_ptr<ProgressUpdate> getProgressUpdate() CXX11_OVERRIDE;
 };
 
 } // namespace aria2

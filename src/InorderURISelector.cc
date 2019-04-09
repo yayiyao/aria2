@@ -40,16 +40,17 @@ namespace aria2 {
 
 InorderURISelector::InorderURISelector() {}
 
-InorderURISelector::~InorderURISelector() {}
+InorderURISelector::~InorderURISelector() = default;
 
-std::string InorderURISelector::select
-(FileEntry* fileEntry,
- const std::vector<std::pair<size_t, std::string> >& usedHosts)
+std::string InorderURISelector::select(
+    FileEntry* fileEntry,
+    const std::vector<std::pair<size_t, std::string>>& usedHosts)
 {
   std::deque<std::string>& uris = fileEntry->getRemainingUris();
-  if(uris.empty()) {
+  if (uris.empty()) {
     return A2STR::NIL;
-  } else {
+  }
+  else {
     std::string nextURI = uris.front();
     uris.pop_front();
     return nextURI;

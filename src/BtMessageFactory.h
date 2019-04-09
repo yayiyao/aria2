@@ -64,10 +64,10 @@ class Piece;
 
 class BtMessageFactory {
 public:
-  virtual ~BtMessageFactory() {}
+  virtual ~BtMessageFactory() = default;
 
-  virtual std::unique_ptr<BtMessage>
-  createBtMessage(const unsigned char* msg, size_t msgLength) = 0;
+  virtual std::unique_ptr<BtMessage> createBtMessage(const unsigned char* msg,
+                                                     size_t msgLength) = 0;
 
   virtual std::unique_ptr<BtHandshakeMessage>
   createHandshakeMessage(const unsigned char* msg, size_t msgLength) = 0;

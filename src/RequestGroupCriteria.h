@@ -41,10 +41,9 @@ namespace aria2 {
 
 class RequestGroup;
 
-class RequestGroupCriteria
-{
+class RequestGroupCriteria {
 public:
-  virtual ~RequestGroupCriteria() {}
+  virtual ~RequestGroupCriteria() = default;
 
   virtual bool match(const RequestGroup* requestGroup) const = 0;
 };

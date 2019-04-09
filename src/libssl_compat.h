@@ -2,7 +2,7 @@
 /*
  * aria2 - The high speed download utility
  *
- * Copyright (C) 2013 Tatsuhiro Tsujikawa
+ * Copyright (C) 2016 Tatsuhiro Tsujikawa
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,17 +32,18 @@
  * files in the program, then also delete it here.
  */
 /* copyright --> */
-#include <errno.h>
+#ifndef LIBSSL_COMPAT_H
+#define LIBSSL_COMPAT_H
 
-/*
- * Since Android ndk r9, __set_errno is deprecated. It is now defined
- * as inline function in errno.h. The syscall assembly calls
- * __set_errno, but since libc.so does not export it, the link
- * fails. To workaround this, replace all occurrences of __set_errno
- * with a2_set_errno and define it here.
- */
-int a2_set_errno(int n)
-{
-  errno = n;
-  return -1;
-}
+#include <openssl/opensslv.h>
+
+#if defined(LIBRESSL_VERSION_NUMBER)
+#  define LIBRESSL_IN_USE 1
+#else // !defined(LIBRESSL_VERSION_NUMBER)
+#  define LIBRESSL_IN_USE 0
+#endif // !defined(LIBRESSL_VERSION_NUMBER)
+
+#define OPENSSL_101_API                                                        \
+  (!LIBRESSL_IN_USE && OPENSSL_VERSION_NUMBER >= 0x1010000fL)
+
+#endif // LIBSSL_COMPAT_H

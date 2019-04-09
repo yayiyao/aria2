@@ -37,48 +37,49 @@
 
 #include "SimpleBtMessage.h"
 
+#include <array>
+
+#include "BtConstants.h"
+
 namespace aria2 {
 
 class BtHandshakeMessage : public SimpleBtMessage {
 public:
-  static const size_t PSTR_LENGTH = 19;
-  static const unsigned char* BT_PSTR;
-  static const size_t RESERVED_LENGTH = 8;
-  static const size_t MESSAGE_LENGTH = 68;
+  constexpr static size_t PSTR_LENGTH = 19;
+  constexpr static size_t RESERVED_LENGTH = 8;
+  constexpr static size_t MESSAGE_LENGTH = 68;
+  const static unsigned char BT_PSTR[];
+
 private:
   uint8_t pstrlen_;
-  unsigned char* pstr_;
-  unsigned char* reserved_;
-  unsigned char* infoHash_;
-  unsigned char* peerId_;
+  std::array<unsigned char, PSTR_LENGTH> pstr_;
+  std::array<unsigned char, RESERVED_LENGTH> reserved_;
+  std::array<unsigned char, INFO_HASH_LENGTH> infoHash_;
+  std::array<unsigned char, PEER_ID_LENGTH> peerId_;
+
   void init();
+
 public:
   BtHandshakeMessage();
   /**
    * infoHash must be 20 byte length.
    * peerId must be 20 byte length.
    */
-  BtHandshakeMessage(const unsigned char* infoHash, const unsigned char* peerId);
+  BtHandshakeMessage(const unsigned char* infoHash,
+                     const unsigned char* peerId);
 
-  static std::unique_ptr<BtHandshakeMessage>
-  create(const unsigned char* data, size_t dataLength);
+  static std::unique_ptr<BtHandshakeMessage> create(const unsigned char* data,
+                                                    size_t dataLength);
 
-  virtual ~BtHandshakeMessage() {
-    delete [] pstr_;
-    delete [] reserved_;
-    delete [] infoHash_;
-    delete [] peerId_;
-  }
+  virtual ~BtHandshakeMessage();
 
   static const uint8_t ID = INT8_MAX;
 
-  static const char NAME[];
+  const static char NAME[];
 
-  virtual void doReceivedAction() CXX11_OVERRIDE {};
+  virtual void doReceivedAction() CXX11_OVERRIDE{};
 
-  virtual unsigned char* createMessage() CXX11_OVERRIDE;
-
-  virtual size_t getMessageLength() CXX11_OVERRIDE;
+  virtual std::vector<unsigned char> createMessage() CXX11_OVERRIDE;
 
   virtual std::string toString() const CXX11_OVERRIDE;
 
@@ -90,34 +91,25 @@ public:
 
   void setDHTEnabled(bool enabled)
   {
-    if(enabled) {
+    if (enabled) {
       reserved_[7] |= 0x01u;
-    } else {
+    }
+    else {
       reserved_[7] &= ~0x01u;
     }
   }
 
-  uint8_t getPstrlen() const {
-    return pstrlen_;
-  }
+  uint8_t getPstrlen() const { return pstrlen_; }
 
-  const unsigned char* getPstr() const {
-    return pstr_;
-  }
+  const unsigned char* getPstr() const { return pstr_.data(); }
 
-  const unsigned char* getReserved() const {
-    return reserved_;
-  }
+  const unsigned char* getReserved() const { return reserved_.data(); }
 
-  const unsigned char* getInfoHash() const {
-    return infoHash_;
-  }
+  const unsigned char* getInfoHash() const { return infoHash_.data(); }
 
   void setInfoHash(const unsigned char* infoHash);
 
-  const unsigned char* getPeerId() const {
-    return peerId_;
-  }
+  const unsigned char* getPeerId() const { return peerId_.data(); }
 
   void setPeerId(const unsigned char* peerId);
 };

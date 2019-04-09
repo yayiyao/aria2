@@ -67,14 +67,15 @@ public:
     CRYPTO_ARC4 = 0x02u
   };
 
+  static constexpr size_t VC_LENGTH = 8U;
+
 private:
-  static const size_t PRIME_BITS = 768U;
-  static const size_t KEY_LENGTH = (PRIME_BITS+7U)/8U;
-  static const size_t VC_LENGTH = 8U;
+  static constexpr size_t PRIME_BITS = 768U;
+  static constexpr size_t KEY_LENGTH = (PRIME_BITS + 7U) / 8U;
   // The largest buffering occurs when receiver receives step2
   // handshake.  We believe that IA is less than or equal to
   // BtHandshakeMessage::MESSAGE_LENGTH
-  static const size_t MAX_BUFFER_LENGTH = 636U;
+  static constexpr size_t MAX_BUFFER_LENGTH = 636U;
 
   cuid_t cuid_;
   std::shared_ptr<SocketCore> socket_;
@@ -97,10 +98,10 @@ private:
   size_t markerIndex_;
   uint16_t padLength_;
   uint16_t iaLength_;
-  std::unique_ptr<unsigned char[]> ia_;
+  std::vector<unsigned char> ia_;
   std::unique_ptr<MessageDigest> sha1_;
 
-  void encryptAndSendData(unsigned char* data, size_t length);
+  void encryptAndSendData(std::vector<unsigned char> data);
 
   void createReq1Hash(unsigned char* md) const;
 
@@ -113,14 +114,14 @@ private:
     return decodeLength16(reinterpret_cast<const unsigned char*>(buffer));
   }
 
-  uint16_t verifyPadLength(const unsigned char* padlenbuf,
-                           const char* padName);
+  uint16_t verifyPadLength(const unsigned char* padlenbuf, const char* padName);
 
   void verifyVC(unsigned char* vcbuf);
 
   void verifyReq1Hash(const unsigned char* req1buf);
 
   void shiftBuffer(size_t offset);
+
 public:
   MSEHandshake(cuid_t cuid, const std::shared_ptr<SocketCore>& socket,
                const Option* op);
@@ -139,15 +140,9 @@ public:
   // is sent. Otherwise returns false.
   bool send();
 
-  bool getWantRead() const
-  {
-    return wantRead_;
-  }
+  bool getWantRead() const { return wantRead_; }
 
-  void setWantRead(bool wantRead)
-  {
-    wantRead_ = wantRead;
-  }
+  void setWantRead(bool wantRead) { wantRead_ = wantRead; }
 
   bool getWantWrite() const;
 
@@ -167,8 +162,8 @@ public:
 
   bool findReceiverHashMarker();
 
-  bool receiveReceiverHashAndPadCLength
-  (const std::vector<std::shared_ptr<DownloadContext> >& downloadContexts);
+  bool receiveReceiverHashAndPadCLength(
+      const std::vector<std::shared_ptr<DownloadContext>>& downloadContexts);
 
   bool receiveReceiverIALength();
 
@@ -177,25 +172,13 @@ public:
   void sendReceiverStep2();
 
   // returns plain text IA
-  const unsigned char* getIA() const
-  {
-    return ia_.get();
-  }
+  const unsigned char* getIA() const { return ia_.data(); }
 
-  size_t getIALength() const
-  {
-    return iaLength_;
-  }
+  size_t getIALength() const { return iaLength_; }
 
-  const unsigned char* getInfoHash() const
-  {
-    return infoHash_;
-  }
+  const unsigned char* getInfoHash() const { return infoHash_; }
 
-  CRYPTO_TYPE getNegotiatedCryptoType() const
-  {
-    return negotiatedCryptoType_;
-  }
+  CRYPTO_TYPE getNegotiatedCryptoType() const { return negotiatedCryptoType_; }
 
   const std::unique_ptr<ARC4Encryptor>& getEncryptor() const
   {
@@ -211,20 +194,11 @@ public:
 
   std::unique_ptr<ARC4Encryptor> popDecryptor();
 
-  const unsigned char* getBuffer() const
-  {
-    return rbuf_;
-  }
+  const unsigned char* getBuffer() const { return rbuf_; }
 
-  unsigned char* getBuffer()
-  {
-    return rbuf_;
-  }
+  unsigned char* getBuffer() { return rbuf_; }
 
-  size_t getBufferLength() const
-  {
-    return rbufLength_;
-  }
+  size_t getBufferLength() const { return rbufLength_; }
 };
 
 } // namespace aria2

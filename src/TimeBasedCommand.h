@@ -42,8 +42,7 @@ namespace aria2 {
 
 class DownloadEngine;
 
-class TimeBasedCommand : public Command
-{
+class TimeBasedCommand : public Command {
 private:
   DownloadEngine* e_;
 
@@ -55,7 +54,7 @@ private:
    * setting exit_ to true if this command's job has finished and you want to
    * delete this command.
    * The exit_ variable is evaluated  after preProcess(), process(),
-   * postProcess(), and terminate processing immediately and excute() returns
+   * postProcess(), and terminate processing immediately and execute() returns
    * true.
    */
   bool exit_;
@@ -63,36 +62,28 @@ private:
   bool routineCommand_;
 
 protected:
-  DownloadEngine* getDownloadEngine() const
-  {
-    return e_;
-  }
+  DownloadEngine* getDownloadEngine() const { return e_; }
 
-  void enableExit()
-  {
-    exit_ = true;
-  }
+  void enableExit() { exit_ = true; }
 
-  const std::chrono::seconds& getInterval() const
-  {
-    return interval_;
-  }
+  const std::chrono::seconds& getInterval() const { return interval_; }
+
 public:
   /**
-   * preProcess() is called each time when excute() is called.
+   * preProcess() is called each time when execute() is called.
    */
-  virtual void preProcess() {};
+  virtual void preProcess(){};
 
   /**
-   * process() is called only when excute() is called and specified time has
+   * process() is called only when execute() is called and specified time has
    * elapsed.
    */
   virtual void process() = 0;
 
   /**
-   * postProcess() is called each time when excute() is called.
+   * postProcess() is called each time when execute() is called.
    */
-  virtual void postProcess() {};
+  virtual void postProcess(){};
 
 public:
   TimeBasedCommand(cuid_t cuid, DownloadEngine* e,

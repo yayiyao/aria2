@@ -37,34 +37,41 @@
 #include "RequestGroupMan.h"
 #include "PieceStorage.h"
 #include "RequestGroup.h"
+#include "wallclock.h"
 
 namespace aria2 {
 
 HaveEraseCommand::HaveEraseCommand(cuid_t cuid, DownloadEngine* e,
                                    std::chrono::seconds interval)
-  : TimeBasedCommand(cuid, e, std::move(interval), true)
+    : TimeBasedCommand(cuid, e, std::move(interval), true)
 {
 }
 
-HaveEraseCommand::~HaveEraseCommand() {}
+HaveEraseCommand::~HaveEraseCommand() = default;
 
 void HaveEraseCommand::preProcess()
 {
-  if(getDownloadEngine()->getRequestGroupMan()->downloadFinished() ||
-     getDownloadEngine()->isHaltRequested()) {
+  if (getDownloadEngine()->getRequestGroupMan()->downloadFinished() ||
+      getDownloadEngine()->isHaltRequested()) {
     enableExit();
   }
 }
 
 void HaveEraseCommand::process()
 {
-  const RequestGroupList& groups =
-    getDownloadEngine()->getRequestGroupMan()->getRequestGroups();
-  for(auto & group : groups) {
+  // we are making a copy of current wallclock.
+  auto expiry = global::wallclock();
+  expiry.sub(5_s);
+
+  const auto& groups =
+      getDownloadEngine()->getRequestGroupMan()->getRequestGroups();
+  for (auto& group : groups) {
     const auto& ps = group->getPieceStorage();
-    if(ps) {
-      ps->removeAdvertisedPiece(5_s);
+    if (!ps) {
+      continue;
     }
+
+    ps->removeAdvertisedPiece(expiry);
   }
 }
 

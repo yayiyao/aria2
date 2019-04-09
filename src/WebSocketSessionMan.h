@@ -53,21 +53,22 @@ class WebSocketSession;
 
 class WebSocketSessionMan : public DownloadEventListener {
 public:
-  typedef std::set<std::shared_ptr<WebSocketSession>,
-                   RefLess<WebSocketSession> > WebSocketSessions;
+  typedef std::set<std::shared_ptr<WebSocketSession>, RefLess<WebSocketSession>>
+      WebSocketSessions;
   WebSocketSessionMan();
   ~WebSocketSessionMan();
   void addSession(const std::shared_ptr<WebSocketSession>& wsSession);
   void removeSession(const std::shared_ptr<WebSocketSession>& wsSession);
   void addNotification(const std::string& method, const RequestGroup* group);
-  virtual void onEvent(DownloadEvent event, const RequestGroup* group)
-    CXX11_OVERRIDE;
+  virtual void onEvent(DownloadEvent event,
+                       const RequestGroup* group) CXX11_OVERRIDE;
+
 private:
   WebSocketSessions sessions_;
 };
 
 } // namespace rpc
 
-} // aria2
+} // namespace aria2
 
 #endif // D_WEB_SOCKET_SESSION_MAN_H

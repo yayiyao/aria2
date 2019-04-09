@@ -43,10 +43,10 @@ namespace aria2 {
 
 class PieceSelector {
 public:
-  virtual ~PieceSelector() {}
+  virtual ~PieceSelector() = default;
 
-  virtual bool select
-  (size_t& index, const unsigned char* bitfield, size_t nbits) const = 0;
+  virtual bool select(size_t& index, const unsigned char* bitfield,
+                      size_t nbits) const = 0;
 };
 
 } // namespace aria2

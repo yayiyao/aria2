@@ -72,6 +72,8 @@ private:
 protected:
   virtual bool executeInternal() CXX11_OVERRIDE;
 
+  virtual bool noCheck() const CXX11_OVERRIDE;
+
   virtual bool prepareForNextSegment();
 
   // This is file local offset
@@ -83,11 +85,9 @@ protected:
   virtual bool shouldEnableWriteCheck();
 
 public:
-  DownloadCommand(cuid_t cuid,
-                  const std::shared_ptr<Request>& req,
+  DownloadCommand(cuid_t cuid, const std::shared_ptr<Request>& req,
                   const std::shared_ptr<FileEntry>& fileEntry,
-                  RequestGroup* requestGroup,
-                  DownloadEngine* e,
+                  RequestGroup* requestGroup, DownloadEngine* e,
                   const std::shared_ptr<SocketCore>& s,
                   const std::shared_ptr<SocketRecvBuffer>& socketRecvBuffer);
   virtual ~DownloadCommand();

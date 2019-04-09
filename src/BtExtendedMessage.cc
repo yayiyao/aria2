@@ -50,14 +50,15 @@ namespace aria2 {
 
 const char BtExtendedMessage::NAME[] = "extended";
 
-BtExtendedMessage::BtExtendedMessage
-(std::unique_ptr<ExtensionMessage> extensionMessage):
-  SimpleBtMessage(ID, NAME),
-  extensionMessage_(std::move(extensionMessage)),
-  msgLength_(0)
-{}
+BtExtendedMessage::BtExtendedMessage(
+    std::unique_ptr<ExtensionMessage> extensionMessage)
+    : SimpleBtMessage(ID, NAME),
+      extensionMessage_(std::move(extensionMessage)),
+      msgLength_(0)
+{
+}
 
-unsigned char* BtExtendedMessage::createMessage()
+std::vector<unsigned char> BtExtendedMessage::createMessage()
 {
   /**
    * len --- 2+extpayload.length, 4bytes
@@ -67,19 +68,14 @@ unsigned char* BtExtendedMessage::createMessage()
    * total: 6+extpayload.length bytes
    */
   std::string payload = extensionMessage_->getPayload();
-  msgLength_ = 6+payload.size();
-  auto msg = new unsigned char[msgLength_];
-  bittorrent::createPeerMessageString(msg, msgLength_, 2+payload.size(), ID);
-  *(msg+5) = extensionMessage_->getExtensionMessageID();
-  memcpy(msg+6, payload.data(), payload.size());
+  msgLength_ = 6 + payload.size();
+  auto msg = std::vector<unsigned char>(msgLength_);
+  auto p = msg.data();
+  bittorrent::createPeerMessageString(p, msgLength_, 2 + payload.size(), ID);
+  p += 5;
+  *p++ = extensionMessage_->getExtensionMessageID();
+  std::copy(std::begin(payload), std::end(payload), p);
   return msg;
-}
-
-size_t BtExtendedMessage::getMessageLength() {
-  if(!msgLength_) {
-    msgLength_ = 6+extensionMessage_->getPayload().size();
-  }
-  return msgLength_;
 }
 
 bool BtExtendedMessage::sendPredicate() const
@@ -87,7 +83,8 @@ bool BtExtendedMessage::sendPredicate() const
   return getPeer()->isExtendedMessagingEnabled();
 }
 
-std::string BtExtendedMessage::toString() const {
+std::string BtExtendedMessage::toString() const
+{
   std::string s = NAME;
   s += " ";
   s += extensionMessage_->toString();
@@ -102,13 +99,13 @@ BtExtendedMessage::create(ExtensionMessageFactory* factory,
   bittorrent::assertPayloadLengthGreater(1, dataLength, NAME);
   bittorrent::assertID(ID, data, NAME);
   assert(factory);
-  return make_unique<BtExtendedMessage>
-    (factory->createMessage(data+1, dataLength-1));
+  return make_unique<BtExtendedMessage>(
+      factory->createMessage(data + 1, dataLength - 1));
 }
 
 void BtExtendedMessage::doReceivedAction()
 {
-  if(extensionMessage_) {
+  if (extensionMessage_) {
     extensionMessage_->doReceivedAction();
   }
 }

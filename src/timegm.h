@@ -46,7 +46,7 @@ extern "C" {
 
 #ifndef HAVE_TIMEGM
 
-time_t timegm(struct tm *tm);
+time_t timegm(struct tm* tm);
 
 #endif // HAVE_TIMEGM
 

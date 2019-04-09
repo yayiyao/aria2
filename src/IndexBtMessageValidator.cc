@@ -38,13 +38,13 @@
 
 namespace aria2 {
 
-IndexBtMessageValidator::IndexBtMessageValidator
-(const IndexBtMessage* message, size_t numPiece)
-  : message_(message),
-    numPiece_(numPiece)
-{}
+IndexBtMessageValidator::IndexBtMessageValidator(const IndexBtMessage* message,
+                                                 size_t numPiece)
+    : message_(message), numPiece_(numPiece)
+{
+}
 
-IndexBtMessageValidator::~IndexBtMessageValidator() {}
+IndexBtMessageValidator::~IndexBtMessageValidator() = default;
 
 void IndexBtMessageValidator::validate()
 {

@@ -37,8 +37,8 @@
 #include <stdlib.h>
 
 #ifdef __MINGW32__
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 #endif // __MINGW32__
 
 #include "asctime_r.h"
@@ -47,27 +47,24 @@
 
 static CRITICAL_SECTION asctime_r_cs;
 
-static void asctime_r_atexit()
+static void asctime_r_atexit() { DeleteCriticalSection(&asctime_r_cs); }
+
+char* asctime_r(const struct tm* tyme, char* buf)
 {
-	DeleteCriticalSection(&asctime_r_cs);
-}
+  static char* p;
+  static int initialized = 0;
 
-char * asctime_r (const struct tm *tyme, char *buf)
-{
-	static char *p;
-	static int initialized = 0;
+  if (!initialized) {
+    ++initialized;
+    InitializeCriticalSection(&asctime_r_cs);
+    atexit(asctime_r_atexit);
+  }
 
-	if (!initialized) {
-		++initialized;
-		InitializeCriticalSection(&asctime_r_cs);
-		atexit(asctime_r_atexit);
-	}
-
-	EnterCriticalSection(&asctime_r_cs);
-	p = asctime(tyme);
-	memcpy(buf, p, 26);
-	LeaveCriticalSection(&asctime_r_cs);
-	return buf;
+  EnterCriticalSection(&asctime_r_cs);
+  p = asctime(tyme);
+  memcpy(buf, p, 26);
+  LeaveCriticalSection(&asctime_r_cs);
+  return buf;
 };
 
 #endif // __MINGW32__

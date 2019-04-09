@@ -40,22 +40,13 @@ namespace aria2 {
 
 Signature::Signature() {}
 
-Signature::~Signature() {}
+Signature::~Signature() = default;
 
-void Signature::setType(std::string type)
-{
-  type_ = std::move(type);
-}
+void Signature::setType(std::string type) { type_ = std::move(type); }
 
-void Signature::setFile(std::string file)
-{
-  file_ = std::move(file);
-}
+void Signature::setFile(std::string file) { file_ = std::move(file); }
 
-void Signature::setBody(std::string body)
-{
-  body_ = std::move(body);
-}
+void Signature::setBody(std::string body) { body_ = std::move(body); }
 
 bool Signature::save(const std::string& filepath) const
 {

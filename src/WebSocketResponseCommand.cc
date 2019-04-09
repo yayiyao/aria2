@@ -43,25 +43,22 @@ namespace aria2 {
 
 namespace rpc {
 
-WebSocketResponseCommand::WebSocketResponseCommand
-(cuid_t cuid,
- const std::shared_ptr<HttpServer>& httpServer,
- DownloadEngine* e,
- const std::shared_ptr<SocketCore>& socket)
-  : AbstractHttpServerResponseCommand(cuid, httpServer, e, socket)
-{}
-
-WebSocketResponseCommand::~WebSocketResponseCommand()
-{}
-
-void WebSocketResponseCommand::afterSend
-(const std::shared_ptr<HttpServer>& httpServer,
- DownloadEngine* e)
+WebSocketResponseCommand::WebSocketResponseCommand(
+    cuid_t cuid, const std::shared_ptr<HttpServer>& httpServer,
+    DownloadEngine* e, const std::shared_ptr<SocketCore>& socket)
+    : AbstractHttpServerResponseCommand(cuid, httpServer, e, socket)
 {
-  std::shared_ptr<WebSocketSession> wsSession
-    (new WebSocketSession(httpServer->getSocket(), getDownloadEngine()));
-  auto command = make_unique<WebSocketInteractionCommand>
-    (getCuid(), wsSession, e, wsSession->getSocket());
+}
+
+WebSocketResponseCommand::~WebSocketResponseCommand() = default;
+
+void WebSocketResponseCommand::afterSend(
+    const std::shared_ptr<HttpServer>& httpServer, DownloadEngine* e)
+{
+  auto wsSession = std::make_shared<WebSocketSession>(httpServer->getSocket(),
+                                                      getDownloadEngine());
+  auto command = make_unique<WebSocketInteractionCommand>(
+      getCuid(), wsSession, e, wsSession->getSocket());
   wsSession->setCommand(command.get());
   e->addCommand(std::move(command));
 }

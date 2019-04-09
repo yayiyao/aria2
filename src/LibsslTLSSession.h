@@ -42,6 +42,7 @@
 #include "LibsslTLSContext.h"
 #include "TLSSession.h"
 #include "a2netcompat.h"
+#include "libssl_compat.h"
 
 namespace aria2 {
 
@@ -55,11 +56,12 @@ public:
   virtual int checkDirection() CXX11_OVERRIDE;
   virtual ssize_t writeData(const void* data, size_t len) CXX11_OVERRIDE;
   virtual ssize_t readData(void* data, size_t len) CXX11_OVERRIDE;
-  virtual int tlsConnect
-  (const std::string& hostname, TLSVersion& version, std::string& handshakeErr)
-  CXX11_OVERRIDE;
+  virtual int tlsConnect(const std::string& hostname, TLSVersion& version,
+                         std::string& handshakeErr) CXX11_OVERRIDE;
   virtual int tlsAccept(TLSVersion& version) CXX11_OVERRIDE;
   virtual std::string getLastErrorString() CXX11_OVERRIDE;
+  virtual size_t getRecvBufferedLength() CXX11_OVERRIDE { return 0; }
+
 private:
   int handshake(TLSVersion& version);
   SSL* ssl_;

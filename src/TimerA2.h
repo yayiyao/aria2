@@ -55,12 +55,11 @@ public:
   Timer(Timer&& time) = default;
 
   template <typename duration>
-  constexpr Timer(const duration& t)
-    : tp_(t)
+  constexpr explicit Timer(const duration& t) : tp_(t)
   {
   }
 
-  Timer(const Clock::time_point& tp);
+  explicit Timer(const Clock::time_point& tp);
 
   Timer& operator=(Timer&& timer) = default;
   Timer& operator=(const Timer& timer) = default;
@@ -72,8 +71,7 @@ public:
 
   void reset();
 
-  template <typename duration>
-  void reset(const duration& t)
+  template <typename duration> void reset(const duration& t)
   {
     tp_ = Clock::time_point(t);
   }
@@ -85,11 +83,9 @@ public:
   // Returns true if this object's time value is zero.
   bool isZero() const;
 
-  template <typename duration>
-  void advance(const duration& t)
-  {
-    tp_ += t;
-  }
+  template <typename duration> void advance(const duration& t) { tp_ += t; }
+
+  template <typename duration> void sub(const duration& t) { tp_ -= t; }
 
   const Clock::time_point& getTime() const { return tp_; }
 

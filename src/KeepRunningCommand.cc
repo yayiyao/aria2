@@ -39,17 +39,16 @@
 namespace aria2 {
 
 KeepRunningCommand::KeepRunningCommand(cuid_t cuid, DownloadEngine* e)
-  : Command(cuid),
-    e_(e)
+    : Command(cuid), e_(e)
 {
   setStatusRealtime();
 }
 
-KeepRunningCommand::~KeepRunningCommand() {}
+KeepRunningCommand::~KeepRunningCommand() = default;
 
 bool KeepRunningCommand::execute()
 {
-  if(e_->isHaltRequested()) {
+  if (e_->isHaltRequested()) {
     return true;
   }
   e_->addCommand(std::unique_ptr<Command>(this));

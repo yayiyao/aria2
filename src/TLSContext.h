@@ -41,23 +41,19 @@
 
 namespace aria2 {
 
-enum TLSSessionSide {
-  TLS_CLIENT,
-  TLS_SERVER
-};
+enum TLSSessionSide { TLS_CLIENT, TLS_SERVER };
 
 enum TLSVersion {
   TLS_PROTO_NONE,
-  TLS_PROTO_SSL3,
-  TLS_PROTO_TLS10,
   TLS_PROTO_TLS11,
   TLS_PROTO_TLS12,
+  TLS_PROTO_TLS13,
 };
 
 class TLSContext {
 public:
   static TLSContext* make(TLSSessionSide side, TLSVersion minVer);
-  virtual ~TLSContext() {}
+  virtual ~TLSContext() = default;
 
   // private key `keyfile' must be decrypted.
   virtual bool addCredentialFile(const std::string& certfile,

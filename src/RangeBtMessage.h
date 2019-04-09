@@ -47,10 +47,10 @@ private:
   int32_t length_;
 
   static const size_t MESSAGE_LENGTH = 17;
+
 protected:
-  template<typename T>
-  static std::unique_ptr<T> create(const unsigned char* data,
-                                   size_t dataLength)
+  template <typename T>
+  static std::unique_ptr<T> create(const unsigned char* data, size_t dataLength)
   {
     bittorrent::assertPayloadLengthEqual(13, dataLength, T::NAME);
     bittorrent::assertID(T::ID, data, T::NAME);
@@ -58,9 +58,10 @@ protected:
                           bittorrent::getIntParam(data, 5),
                           bittorrent::getIntParam(data, 9));
   }
+
 public:
-  RangeBtMessage(uint8_t id, const char* name,
-                 size_t index, int32_t begin, int32_t length);
+  RangeBtMessage(uint8_t id, const char* name, size_t index, int32_t begin,
+                 int32_t length);
 
   size_t getIndex() const { return index_; }
 
@@ -74,9 +75,7 @@ public:
 
   void setLength(int32_t length) { length_ = length; }
 
-  virtual unsigned char* createMessage() CXX11_OVERRIDE;
-
-  virtual size_t getMessageLength() CXX11_OVERRIDE;
+  virtual std::vector<unsigned char> createMessage() CXX11_OVERRIDE;
 
   virtual std::string toString() const CXX11_OVERRIDE;
 };

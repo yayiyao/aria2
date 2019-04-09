@@ -45,6 +45,7 @@
 
 #include "error_code.h"
 #include "RequestGroup.h"
+#include "ContextAttribute.h"
 
 namespace aria2 {
 
@@ -52,8 +53,7 @@ class Option;
 class FileEntry;
 class MetadataInfo;
 
-struct DownloadResult
-{
+struct DownloadResult {
   // This field contains GID. See comment in
   // RequestGroup.cc::belongsToGID_.
   a2_gid_t belongsTo;
@@ -74,11 +74,16 @@ struct DownloadResult
 
   std::shared_ptr<MetadataInfo> metadataInfo;
 
-  std::vector<std::shared_ptr<FileEntry> > fileEntries;
+  std::vector<std::shared_ptr<ContextAttribute>> attrs;
+
+  std::vector<std::shared_ptr<FileEntry>> fileEntries;
 
   // This field contains GIDs. See comment in
   // RequestGroup.cc::followedByGIDs_.
   std::vector<a2_gid_t> followedBy;
+
+  // The reverse link for followedBy.
+  a2_gid_t following;
 
   std::string bitfield;
 
@@ -92,14 +97,16 @@ struct DownloadResult
 
   error_code::Value result;
 
+  std::string resultMessage;
+
   bool inMemoryDownload;
 
   DownloadResult();
   ~DownloadResult();
 
   // Don't allow copying
-  DownloadResult(const DownloadResult& c);
-  DownloadResult& operator=(const DownloadResult& c);
+  DownloadResult(const DownloadResult& c) = delete;
+  DownloadResult& operator=(const DownloadResult& c) = delete;
 };
 
 } // namespace aria2

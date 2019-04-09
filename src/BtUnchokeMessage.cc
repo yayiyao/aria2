@@ -40,44 +40,20 @@ namespace aria2 {
 
 const char BtUnchokeMessage::NAME[] = "unchoke";
 
-BtUnchokeMessage::BtUnchokeMessage():ZeroBtMessage(ID, NAME) {}
+BtUnchokeMessage::BtUnchokeMessage() : ZeroBtMessage(ID, NAME) {}
 
-std::unique_ptr<BtUnchokeMessage> BtUnchokeMessage::create
-(const unsigned char* data, size_t dataLength)
+std::unique_ptr<BtUnchokeMessage>
+BtUnchokeMessage::create(const unsigned char* data, size_t dataLength)
 {
   return ZeroBtMessage::create<BtUnchokeMessage>(data, dataLength);
 }
 
 void BtUnchokeMessage::doReceivedAction()
 {
-  if(isMetadataGetMode()) {
+  if (isMetadataGetMode()) {
     return;
   }
   getPeer()->peerChoking(false);
-}
-
-bool BtUnchokeMessage::sendPredicate() const
-{
-  return getPeer()->amChoking();
-}
-
-namespace {
-struct ThisProgressUpdate : public ProgressUpdate {
-  ThisProgressUpdate(std::shared_ptr<Peer>  peer)
-    : peer(std::move(peer)) {}
-  virtual void update(size_t length, bool complete) CXX11_OVERRIDE
-  {
-    if(complete) {
-      peer->amChoking(false);
-    }
-  }
-  std::shared_ptr<Peer> peer;
-};
-} // namespace
-
-std::unique_ptr<ProgressUpdate> BtUnchokeMessage::getProgressUpdate()
-{
-  return make_unique<ThisProgressUpdate>(getPeer());
 }
 
 } // namespace aria2

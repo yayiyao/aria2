@@ -45,10 +45,7 @@
 
 namespace aria2 {
 
-enum SSHDirection {
-  SSH_WANT_READ = 1,
-  SSH_WANT_WRITE
-};
+enum SSHDirection { SSH_WANT_READ = 1, SSH_WANT_WRITE };
 
 enum SSHErrorCode {
   SSH_ERR_OK = 0,
@@ -126,7 +123,7 @@ public:
   // blocks, or SSH_ERR_ERROR.
   int sftpStat(int64_t& totalLength, time_t& mtime);
 
-  // Moves file postion to |pos|.
+  // Moves file position to |pos|.
   void sftpSeek(int64_t pos);
 
   // Returns last error string
@@ -138,7 +135,6 @@ private:
   LIBSSH2_SFTP_HANDLE* sftph_;
   sock_t fd_;
 };
-
-}
+} // namespace aria2
 
 #endif // SSH_SESSION_H

@@ -35,6 +35,7 @@
 
 #include "WinTLSContext.h"
 
+#include <cassert>
 #include <sstream>
 
 #include "BufferedFile.h"
@@ -45,20 +46,20 @@
 #include "util.h"
 
 #ifndef SP_PROT_TLS1_1_CLIENT
-#define SP_PROT_TLS1_1_CLIENT 0x00000200
+#  define SP_PROT_TLS1_1_CLIENT 0x00000200
 #endif
 #ifndef SP_PROT_TLS1_1_SERVER
-#define SP_PROT_TLS1_1_SERVER 0x00000100
+#  define SP_PROT_TLS1_1_SERVER 0x00000100
 #endif
 #ifndef SP_PROT_TLS1_2_CLIENT
-#define SP_PROT_TLS1_2_CLIENT 0x00000800
+#  define SP_PROT_TLS1_2_CLIENT 0x00000800
 #endif
 #ifndef SP_PROT_TLS1_2_SERVER
-#define SP_PROT_TLS1_2_SERVER 0x00000400
+#  define SP_PROT_TLS1_2_SERVER 0x00000400
 #endif
 
 #ifndef SCH_USE_STRONG_CRYPTO
-#define SCH_USE_STRONG_CRYPTO 0x00400000
+#  define SCH_USE_STRONG_CRYPTO 0x00400000
 #endif
 
 #define WEAK_CIPHER_BITS 56
@@ -67,59 +68,41 @@
 namespace aria2 {
 
 WinTLSContext::WinTLSContext(TLSSessionSide side, TLSVersion ver)
-  : side_(side), store_(0)
+    : side_(side), store_(0)
 {
   memset(&credentials_, 0, sizeof(credentials_));
   credentials_.dwVersion = SCHANNEL_CRED_VERSION;
   credentials_.grbitEnabledProtocols = 0;
   if (side_ == TLS_CLIENT) {
     switch (ver) {
-    case TLS_PROTO_SSL3:
-      credentials_.grbitEnabledProtocols |= SP_PROT_SSL3_CLIENT;
-      // fall through
-    case TLS_PROTO_TLS10:
-      credentials_.grbitEnabledProtocols |= SP_PROT_TLS1_CLIENT;
-      // fall through
     case TLS_PROTO_TLS11:
       credentials_.grbitEnabledProtocols |= SP_PROT_TLS1_1_CLIENT;
-      // fall through
+    // fall through
     case TLS_PROTO_TLS12:
       credentials_.grbitEnabledProtocols |= SP_PROT_TLS1_2_CLIENT;
-      // fall through
-    default:
       break;
+    default:
+      assert(0);
+      abort();
     }
   }
   else {
     switch (ver) {
-    case TLS_PROTO_SSL3:
-      credentials_.grbitEnabledProtocols |= SP_PROT_SSL3_SERVER;
-      // fall through
-    case TLS_PROTO_TLS10:
-      credentials_.grbitEnabledProtocols |= SP_PROT_TLS1_SERVER;
-      // fall through
     case TLS_PROTO_TLS11:
       credentials_.grbitEnabledProtocols |= SP_PROT_TLS1_1_SERVER;
-      // fall through
+    // fall through
     case TLS_PROTO_TLS12:
       credentials_.grbitEnabledProtocols |= SP_PROT_TLS1_2_SERVER;
-      // fall through
-    default:
       break;
+    default:
+      assert(0);
+      abort();
     }
   }
 
-  switch (ver) {
-  case TLS_PROTO_SSL3:
-    // User explicitly wanted SSLv3 and therefore weak ciphers.
-    credentials_.dwMinimumCipherStrength = WEAK_CIPHER_BITS;
-    break;
-
-  default:
-    // Strong protocol versions: Use a minimum strength, which might be later
-    // refined using SCH_USE_STRONG_CRYPTO in the flags.
-    credentials_.dwMinimumCipherStrength = STRONG_CIPHER_BITS;
-  }
+  // Strong protocol versions: Use a minimum strength, which might be later
+  // refined using SCH_USE_STRONG_CRYPTO in the flags.
+  credentials_.dwMinimumCipherStrength = STRONG_CIPHER_BITS;
 
   setVerifyPeer(side_ == TLS_CLIENT);
 }
@@ -159,10 +142,9 @@ void WinTLSContext::setVerifyPeer(bool verify)
 
   if (side_ != TLS_CLIENT || !verify) {
     // No verification for servers and if user explicitly requested it
-    credentials_.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION |
-                            SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
-                            SCH_CRED_IGNORE_REVOCATION_OFFLINE |
-                            SCH_CRED_NO_SERVERNAME_CHECK;
+    credentials_.dwFlags |=
+        SCH_CRED_MANUAL_CRED_VALIDATION | SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
+        SCH_CRED_IGNORE_REVOCATION_OFFLINE | SCH_CRED_NO_SERVERNAME_CHECK;
     return;
   }
 
@@ -195,15 +177,9 @@ CredHandle* WinTLSContext::getCredHandle()
     credentials_.paCred = nullptr;
   }
   SECURITY_STATUS status = ::AcquireCredentialsHandleW(
-      nullptr,
-      (SEC_WCHAR*)UNISP_NAME_W,
-      side_ == TLS_CLIENT ? SECPKG_CRED_OUTBOUND : SECPKG_CRED_INBOUND,
-      nullptr,
-      &credentials_,
-      nullptr,
-      nullptr,
-      cred_.get(),
-      &ts);
+      nullptr, (SEC_WCHAR*)UNISP_NAME_W,
+      side_ == TLS_CLIENT ? SECPKG_CRED_OUTBOUND : SECPKG_CRED_INBOUND, nullptr,
+      &credentials_, nullptr, nullptr, cred_.get(), &ts);
   if (ctx) {
     ::CertFreeCertificateContext(ctx);
   }
@@ -220,10 +196,7 @@ bool WinTLSContext::addCredentialFile(const std::string& certfile,
   std::stringstream ss;
   BufferedFile(certfile.c_str(), "rb").transfer(ss);
   auto data = ss.str();
-  CRYPT_DATA_BLOB blob = {
-    (DWORD)data.length(),
-    (BYTE*)data.c_str()
-  };
+  CRYPT_DATA_BLOB blob = {(DWORD)data.length(), (BYTE*)data.c_str()};
   if (!::PFXIsPFXBlob(&blob)) {
     A2_LOG_ERROR("Not a valid PKCS12 file");
     return false;
@@ -231,8 +204,8 @@ bool WinTLSContext::addCredentialFile(const std::string& certfile,
   HCERTSTORE store =
       ::PFXImportCertStore(&blob, L"", CRYPT_EXPORTABLE | CRYPT_USER_KEYSET);
   if (!store_) {
-    store = ::PFXImportCertStore(
-        &blob, nullptr, CRYPT_EXPORTABLE | CRYPT_USER_KEYSET);
+    store = ::PFXImportCertStore(&blob, nullptr,
+                                 CRYPT_EXPORTABLE | CRYPT_USER_KEYSET);
   }
   if (!store) {
     A2_LOG_ERROR("Failed to import PKCS12 store");

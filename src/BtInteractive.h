@@ -41,17 +41,16 @@
 
 namespace aria2 {
 
-
 class BtHandshakeMessage;
 
 class BtInteractive {
 public:
-  virtual ~BtInteractive() {}
+  virtual ~BtInteractive() = default;
 
   virtual void initiateHandshake() = 0;
 
-  virtual std::unique_ptr<BtHandshakeMessage> receiveHandshake
-  (bool quickReply = false) = 0;
+  virtual std::unique_ptr<BtHandshakeMessage>
+  receiveHandshake(bool quickReply = false) = 0;
 
   virtual std::unique_ptr<BtHandshakeMessage> receiveAndSendHandshake() = 0;
 

@@ -37,9 +37,10 @@
 namespace aria2 {
 
 URIResult::URIResult(const std::string& uri, error_code::Value result)
-  : uri_(uri), result_(result)
-{}
+    : uri_(uri), result_(result)
+{
+}
 
-URIResult::~URIResult() {}
+URIResult::~URIResult() = default;
 
 } // namespace aria2

@@ -60,7 +60,7 @@ class Option;
 
 class OptionHandler {
 public:
-  virtual ~OptionHandler() {}
+  virtual ~OptionHandler() = default;
 
   virtual void parse(Option& option, const std::string& arg) const = 0;
 
@@ -84,11 +84,7 @@ public:
 
   virtual PrefPtr getPref() const = 0;
 
-  enum ARG_TYPE {
-    REQ_ARG,
-    OPT_ARG,
-    NO_ARG
-  };
+  enum ARG_TYPE { REQ_ARG, OPT_ARG, NO_ARG };
 
   virtual ARG_TYPE getArgType() const = 0;
 

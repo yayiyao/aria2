@@ -33,19 +33,20 @@ How to use
 ----------
 
 See `the online manual
-<http://aria2.sourceforge.net/manual/en/html/>`_.
+<https://aria2.github.io/manual/en/html/>`_.
 
 Notes
 -----
 
-aria2c executable was generated using android-ndk-r10b.
+aria2c executable was generated using android-ndk-r14b.
 
 The following libraries were statically linked.
 
-* openssl 1.0.2a
-* expat 2.1.0
-* c-ares 1.10.0
-* libssh2 1.5.0
+* openssl 1.0.2o
+* expat 2.2.5
+* zlib 1.2.11
+* c-ares 1.14.0
+* libssh2 1.8.0
 
 Since Android does not have ``/etc/resolv.conf``, c-ares (asynchronous
 DNS resolver) is disabled by default. But name resolution is sometimes

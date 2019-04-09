@@ -50,34 +50,50 @@
 
 namespace aria2 {
 
-BtFileAllocationEntry::BtFileAllocationEntry(RequestGroup* requestGroup):
-  FileAllocationEntry(requestGroup, nullptr) {}
-
-BtFileAllocationEntry::~BtFileAllocationEntry() {}
-
-void BtFileAllocationEntry::prepareForNextAction
-(std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e)
+BtFileAllocationEntry::BtFileAllocationEntry(RequestGroup* requestGroup)
+    : FileAllocationEntry(requestGroup, nullptr)
 {
-  BtSetup().setup(commands, getRequestGroup(), e,
-                  getRequestGroup()->getOption().get());
-  if(getRequestGroup()->getOption()->getAsBool(PREF_ENABLE_MMAP)) {
-    getRequestGroup()->getPieceStorage()->getDiskAdaptor()->enableMmap();
+}
+
+BtFileAllocationEntry::~BtFileAllocationEntry() = default;
+
+void BtFileAllocationEntry::prepareForNextAction(
+    std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e)
+{
+  auto rg = getRequestGroup();
+  auto& dctx = rg->getDownloadContext();
+  auto& ps = rg->getPieceStorage();
+  auto diskAdaptor = ps->getDiskAdaptor();
+  auto& option = rg->getOption();
+
+  BtSetup().setup(commands, rg, e, option.get());
+  if (option->getAsBool(PREF_ENABLE_MMAP) &&
+      option->get(PREF_FILE_ALLOCATION) != V_NONE &&
+      diskAdaptor->size() <= option->getAsLLInt(PREF_MAX_MMAP_LIMIT)) {
+    diskAdaptor->enableMmap();
   }
-  if(!getRequestGroup()->downloadFinished()) {
+  if (!rg->downloadFinished()) {
     // For DownloadContext::resetDownloadStartTime(), see also
     // RequestGroup::createInitialCommand()
-    getRequestGroup()->getDownloadContext()->resetDownloadStartTime();
-    const std::vector<std::shared_ptr<FileEntry> >& fileEntries =
-      getRequestGroup()->getDownloadContext()->getFileEntries();
-    if(isUriSuppliedForRequsetFileEntry
-       (std::begin(fileEntries), std::end(fileEntries))) {
-      getRequestGroup()->createNextCommandWithAdj(commands, e, 0);
+    dctx->resetDownloadStartTime();
+    const auto& fileEntries = dctx->getFileEntries();
+    if (isUriSuppliedForRequsetFileEntry(std::begin(fileEntries),
+                                         std::end(fileEntries))) {
+      rg->createNextCommandWithAdj(commands, e, 0);
     }
-  } else {
+
+    if (option->getAsInt(PREF_AUTO_SAVE_INTERVAL) != 0) {
+      try {
+        rg->saveControlFile();
+      }
+      catch (RecoverableException& e) {
+        A2_LOG_ERROR_EX(EX_EXCEPTION_CAUGHT, e);
+      }
+    }
+  }
+  else {
 #ifdef __MINGW32__
-    const std::shared_ptr<DiskAdaptor>& diskAdaptor =
-      getRequestGroup()->getPieceStorage()->getDiskAdaptor();
-    if(!diskAdaptor->isReadOnlyEnabled()) {
+    if (!diskAdaptor->isReadOnlyEnabled()) {
       // On Windows, if aria2 opens files with GENERIC_WRITE access
       // right, some programs cannot open them aria2 is seeding. To
       // avoid this situation, re-open the files with read-only
@@ -89,7 +105,7 @@ void BtFileAllocationEntry::prepareForNextAction
       diskAdaptor->openFile();
     }
 #endif // __MINGW32__
-    getRequestGroup()->enableSeedOnly();
+    rg->enableSeedOnly();
   }
 }
 

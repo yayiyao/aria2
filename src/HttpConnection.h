@@ -62,7 +62,12 @@ private:
 public:
   HttpRequestEntry(std::unique_ptr<HttpRequest> httpRequest);
 
-  const std::unique_ptr<HttpRequest>& getHttpRequest() const {
+  // Resets proc_ by recreating the object.  Thus any object obtained
+  // by getHttpRequest() before this call is invalidated.
+  void resetHttpHeaderProcessor();
+
+  const std::unique_ptr<HttpRequest>& getHttpRequest() const
+  {
     return httpRequest_;
   }
 
@@ -96,7 +101,7 @@ public:
    * If segment.sp+segment.ds > 0 then Range header is added.
    * This method is used in HTTP/HTTP downloading and FTP downloading via
    * HTTP proxy(GET method).
-   * @param segment indicates starting postion of the file for downloading
+   * @param segment indicates starting position of the file for downloading
    */
   void sendRequest(std::unique_ptr<HttpRequest> httpRequest);
 
@@ -124,7 +129,8 @@ public:
 
   void sendPendingData();
 
-  const std::shared_ptr<SocketRecvBuffer>& getSocketRecvBuffer() const {
+  const std::shared_ptr<SocketRecvBuffer>& getSocketRecvBuffer() const
+  {
     return socketRecvBuffer_;
   }
 };

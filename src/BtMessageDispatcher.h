@@ -49,18 +49,20 @@ class BtMessage;
 
 class BtMessageDispatcher {
 public:
-  virtual ~BtMessageDispatcher() {}
+  virtual ~BtMessageDispatcher() = default;
 
   virtual void addMessageToQueue(std::unique_ptr<BtMessage> btMessage) = 0;
 
   virtual void sendMessages() = 0;
 
-  virtual void doCancelSendingPieceAction
-  (size_t index, int32_t begin, int32_t length) = 0;
+  virtual void doCancelSendingPieceAction(size_t index, int32_t begin,
+                                          int32_t length) = 0;
 
-  virtual void doCancelSendingPieceAction(const std::shared_ptr<Piece>& piece) = 0;
+  virtual void
+  doCancelSendingPieceAction(const std::shared_ptr<Piece>& piece) = 0;
 
-  virtual void doAbortOutstandingRequestAction(const std::shared_ptr<Piece>& piece) = 0;
+  virtual void
+  doAbortOutstandingRequestAction(const std::shared_ptr<Piece>& piece) = 0;
 
   virtual void doChokedAction() = 0;
 
@@ -76,8 +78,8 @@ public:
 
   virtual bool isOutstandingRequest(size_t index, size_t blockIndex) = 0;
 
-  virtual const RequestSlot* getOutstandingRequest
-  (size_t index, int32_t begin, int32_t length) = 0;
+  virtual const RequestSlot* getOutstandingRequest(size_t index, int32_t begin,
+                                                   int32_t length) = 0;
 
   virtual void removeOutstandingRequest(const RequestSlot* slot) = 0;
 

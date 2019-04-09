@@ -54,7 +54,7 @@ class DownloadEngine;
 class AsyncNameResolverMan;
 #endif // ENABLE_ASYNC_DNS
 
-class DHTEntryPointNameResolveCommand:public Command {
+class DHTEntryPointNameResolveCommand : public Command {
 private:
   DownloadEngine* e_;
 
@@ -72,6 +72,8 @@ private:
 
   std::deque<std::pair<std::string, uint16_t>> entryPoints_;
 
+  int family_;
+
   int numSuccess_;
 
   bool bootstrapEnabled_;
@@ -84,9 +86,9 @@ private:
 #endif // ENABLE_ASYNC_DNS
 
 public:
-  DHTEntryPointNameResolveCommand
-  (cuid_t cuid, DownloadEngine* e,
-   const std::vector<std::pair<std:: string, uint16_t> >& entryPoints);
+  DHTEntryPointNameResolveCommand(
+      cuid_t cuid, DownloadEngine* e, int family,
+      const std::vector<std::pair<std::string, uint16_t>>& entryPoints);
 
   virtual ~DHTEntryPointNameResolveCommand();
 

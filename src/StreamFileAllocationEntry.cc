@@ -46,38 +46,44 @@
 #include "FileEntry.h"
 #include "PieceStorage.h"
 #include "DiskAdaptor.h"
+#include "LogFactory.h"
 
 namespace aria2 {
 
-StreamFileAllocationEntry::StreamFileAllocationEntry
-(RequestGroup* requestGroup, std::unique_ptr<Command> nextCommand):
-  FileAllocationEntry(requestGroup, std::move(nextCommand))
-{}
-
-StreamFileAllocationEntry::~StreamFileAllocationEntry() {}
-
-void StreamFileAllocationEntry::prepareForNextAction
-(std::vector<std::unique_ptr<Command>>& commands,
- DownloadEngine* e)
+StreamFileAllocationEntry::StreamFileAllocationEntry(
+    RequestGroup* requestGroup, std::unique_ptr<Command> nextCommand)
+    : FileAllocationEntry(requestGroup, std::move(nextCommand))
 {
+}
+
+StreamFileAllocationEntry::~StreamFileAllocationEntry() = default;
+
+void StreamFileAllocationEntry::prepareForNextAction(
+    std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e)
+{
+  auto rg = getRequestGroup();
+  auto& dctx = rg->getDownloadContext();
+  auto& ps = rg->getPieceStorage();
+  auto diskAdaptor = ps->getDiskAdaptor();
+  auto& option = rg->getOption();
+
   // For DownloadContext::resetDownloadStartTime(), see also
   // RequestGroup::createInitialCommand()
-  getRequestGroup()->getDownloadContext()->resetDownloadStartTime();
-  if(getRequestGroup()->getOption()->getAsBool(PREF_ENABLE_MMAP)) {
-    getRequestGroup()->getPieceStorage()->getDiskAdaptor()->enableMmap();
+  dctx->resetDownloadStartTime();
+  if (option->getAsBool(PREF_ENABLE_MMAP) &&
+      option->get(PREF_FILE_ALLOCATION) != V_NONE &&
+      diskAdaptor->size() <= option->getAsLLInt(PREF_MAX_MMAP_LIMIT)) {
+    diskAdaptor->enableMmap();
   }
-  if(getNextCommand()) {
+  if (getNextCommand()) {
     // Reset download start time of PeerStat because it is started
     // before file allocation begins.
-    const std::shared_ptr<DownloadContext>& dctx =
-      getRequestGroup()->getDownloadContext();
-    const std::vector<std::shared_ptr<FileEntry> >& fileEntries =
-      dctx->getFileEntries();
-    for(auto & f : fileEntries) {
+    const auto& fileEntries = dctx->getFileEntries();
+    for (auto& f : fileEntries) {
       const auto& reqs = f->getInFlightRequests();
-      for(auto & req : reqs) {
-        const std::shared_ptr<PeerStat>& peerStat = req->getPeerStat();
-        if(peerStat) {
+      for (auto& req : reqs) {
+        const auto& peerStat = req->getPeerStat();
+        if (peerStat) {
           peerStat->downloadStart();
         }
       }
@@ -87,9 +93,20 @@ void StreamFileAllocationEntry::prepareForNextAction
     e->setNoWait(true);
     commands.push_back(popNextCommand());
     // try remaining uris
-    getRequestGroup()->createNextCommandWithAdj(commands, e, -1);
-  } else {
-    getRequestGroup()->createNextCommandWithAdj(commands, e, 0);
+    rg->createNextCommandWithAdj(commands, e, -1);
+  }
+  else {
+    rg->createNextCommandWithAdj(commands, e, 0);
+  }
+
+  if (option->getAsInt(PREF_AUTO_SAVE_INTERVAL) != 0 &&
+      !rg->allDownloadFinished()) {
+    try {
+      rg->saveControlFile();
+    }
+    catch (RecoverableException& e) {
+      A2_LOG_ERROR_EX(EX_EXCEPTION_CAUGHT, e);
+    }
   }
 }
 

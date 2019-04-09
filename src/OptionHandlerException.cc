@@ -39,28 +39,27 @@ namespace aria2 {
 
 namespace {
 const char* MESSAGE =
-  _("We encountered a problem while processing the option '--%s'.");
+    _("We encountered a problem while processing the option '--%s'.");
 } // namespace
 
-OptionHandlerException::OptionHandlerException
-(const char* file, int line,
- PrefPtr pref)
-  : RecoverableException
-    (file, line, fmt(MESSAGE, pref->k), error_code::OPTION_ERROR),
-    pref_(pref)
-{}
+OptionHandlerException::OptionHandlerException(const char* file, int line,
+                                               PrefPtr pref)
+    : RecoverableException(file, line, fmt(MESSAGE, pref->k),
+                           error_code::OPTION_ERROR),
+      pref_(pref)
+{
+}
 
-OptionHandlerException::OptionHandlerException
-(const char* file, int line,
- PrefPtr pref,
- const Exception& cause)
-  : RecoverableException
-    (file, line, fmt(MESSAGE, pref->k), error_code::OPTION_ERROR,
-     cause),
-    pref_(pref)
-{}
+OptionHandlerException::OptionHandlerException(const char* file, int line,
+                                               PrefPtr pref,
+                                               const Exception& cause)
+    : RecoverableException(file, line, fmt(MESSAGE, pref->k),
+                           error_code::OPTION_ERROR, cause),
+      pref_(pref)
+{
+}
 
-OptionHandlerException::~OptionHandlerException() throw() {}
+OptionHandlerException::~OptionHandlerException() throw() = default;
 
 std::shared_ptr<Exception> OptionHandlerException::copy() const
 {

@@ -82,96 +82,98 @@
 #include "CheckIntegrityCommand.h"
 #include "ChecksumCheckIntegrityEntry.h"
 #ifdef ENABLE_BITTORRENT
-# include "bittorrent_helper.h"
-# include "BtRegistry.h"
-# include "BtCheckIntegrityEntry.h"
-# include "DefaultPeerStorage.h"
-# include "DefaultBtAnnounce.h"
-# include "BtRuntime.h"
-# include "BtSetup.h"
-# include "BtPostDownloadHandler.h"
-# include "DHTSetup.h"
-# include "DHTRegistry.h"
-# include "DHTNode.h"
-# include "DHTRoutingTable.h"
-# include "DHTTaskQueue.h"
-# include "DHTTaskFactory.h"
-# include "DHTTokenTracker.h"
-# include "DHTMessageDispatcher.h"
-# include "DHTMessageReceiver.h"
-# include "DHTMessageFactory.h"
-# include "DHTMessageCallback.h"
-# include "BtMessageFactory.h"
-# include "BtRequestFactory.h"
-# include "BtMessageDispatcher.h"
-# include "BtMessageReceiver.h"
-# include "PeerConnection.h"
-# include "ExtensionMessageFactory.h"
-# include "DHTPeerAnnounceStorage.h"
-# include "DHTEntryPointNameResolveCommand.h"
-# include "LongestSequencePieceSelector.h"
-# include "PriorityPieceSelector.h"
-# include "bittorrent_helper.h"
+#  include "bittorrent_helper.h"
+#  include "BtRegistry.h"
+#  include "BtCheckIntegrityEntry.h"
+#  include "DefaultPeerStorage.h"
+#  include "DefaultBtAnnounce.h"
+#  include "BtRuntime.h"
+#  include "BtSetup.h"
+#  include "BtPostDownloadHandler.h"
+#  include "DHTSetup.h"
+#  include "DHTRegistry.h"
+#  include "DHTNode.h"
+#  include "DHTRoutingTable.h"
+#  include "DHTTaskQueue.h"
+#  include "DHTTaskFactory.h"
+#  include "DHTTokenTracker.h"
+#  include "DHTMessageDispatcher.h"
+#  include "DHTMessageReceiver.h"
+#  include "DHTMessageFactory.h"
+#  include "DHTMessageCallback.h"
+#  include "BtMessageFactory.h"
+#  include "BtRequestFactory.h"
+#  include "BtMessageDispatcher.h"
+#  include "BtMessageReceiver.h"
+#  include "PeerConnection.h"
+#  include "ExtensionMessageFactory.h"
+#  include "DHTPeerAnnounceStorage.h"
+#  include "DHTEntryPointNameResolveCommand.h"
+#  include "LongestSequencePieceSelector.h"
+#  include "PriorityPieceSelector.h"
+#  include "bittorrent_helper.h"
 #endif // ENABLE_BITTORRENT
 #ifdef ENABLE_METALINK
-# include "MetalinkPostDownloadHandler.h"
+#  include "MetalinkPostDownloadHandler.h"
 #endif // ENABLE_METALINK
 
 namespace aria2 {
 
 RequestGroup::RequestGroup(const std::shared_ptr<GroupId>& gid,
                            const std::shared_ptr<Option>& option)
-  : belongsToGID_(0),
-    gid_(gid),
-    option_(option),
-    progressInfoFile_(std::make_shared<NullProgressInfoFile>()),
-    uriSelector_(make_unique<InorderURISelector>()),
-    requestGroupMan_(nullptr),
+    : belongsToGID_(0),
+      gid_(gid),
+      option_(option),
+      progressInfoFile_(std::make_shared<NullProgressInfoFile>()),
+      uriSelector_(make_unique<InorderURISelector>()),
+      requestGroupMan_(nullptr),
 #ifdef ENABLE_BITTORRENT
-    btRuntime_(nullptr),
-    peerStorage_(nullptr),
+      btRuntime_(nullptr),
+      peerStorage_(nullptr),
 #endif // ENABLE_BITTORRENT
-    lastModifiedTime_(Time::null()),
-    timeout_(option->getAsInt(PREF_TIMEOUT)),
-    state_(STATE_WAITING),
-    numConcurrentCommand_(option->getAsInt(PREF_SPLIT)),
-    numStreamConnection_(0),
-    numStreamCommand_(0),
-    numCommand_(0),
-    fileNotFoundCount_(0),
-    maxDownloadSpeedLimit_(option->getAsInt(PREF_MAX_DOWNLOAD_LIMIT)),
-    maxUploadSpeedLimit_(option->getAsInt(PREF_MAX_UPLOAD_LIMIT)),
-    resumeFailureCount_(0),
-    haltReason_(RequestGroup::NONE),
-    lastErrorCode_(error_code::UNDEFINED),
-    saveControlFile_(true),
-    preLocalFileCheckEnabled_(true),
-    haltRequested_(false),
-    forceHaltRequested_(false),
-    pauseRequested_(false),
-    inMemoryDownload_(false),
-    seedOnly_(false)
+      followingGID_(0),
+      lastModifiedTime_(Time::null()),
+      timeout_(option->getAsInt(PREF_TIMEOUT)),
+      state_(STATE_WAITING),
+      numConcurrentCommand_(option->getAsInt(PREF_SPLIT)),
+      numStreamConnection_(0),
+      numStreamCommand_(0),
+      numCommand_(0),
+      fileNotFoundCount_(0),
+      maxDownloadSpeedLimit_(option->getAsInt(PREF_MAX_DOWNLOAD_LIMIT)),
+      maxUploadSpeedLimit_(option->getAsInt(PREF_MAX_UPLOAD_LIMIT)),
+      resumeFailureCount_(0),
+      haltReason_(RequestGroup::NONE),
+      lastErrorCode_(error_code::UNDEFINED),
+      saveControlFile_(true),
+      preLocalFileCheckEnabled_(true),
+      haltRequested_(false),
+      forceHaltRequested_(false),
+      pauseRequested_(false),
+      restartRequested_(false),
+      inMemoryDownload_(false),
+      seedOnly_(false)
 {
   fileAllocationEnabled_ = option_->get(PREF_FILE_ALLOCATION) != V_NONE;
-  if(!option_->getAsBool(PREF_DRY_RUN)) {
+  if (!option_->getAsBool(PREF_DRY_RUN)) {
     initializePreDownloadHandler();
     initializePostDownloadHandler();
   }
 }
 
-RequestGroup::~RequestGroup() {}
+RequestGroup::~RequestGroup() = default;
 
 bool RequestGroup::isCheckIntegrityReady()
 {
   return option_->getAsBool(PREF_CHECK_INTEGRITY) &&
-    ((downloadContext_->isChecksumVerificationAvailable() &&
-      downloadFinishedByFileLength()) ||
-     downloadContext_->isPieceHashVerificationAvailable());
+         ((downloadContext_->isChecksumVerificationAvailable() &&
+           downloadFinishedByFileLength()) ||
+          downloadContext_->isPieceHashVerificationAvailable());
 }
 
 bool RequestGroup::downloadFinished() const
 {
-  if(!pieceStorage_) {
+  if (!pieceStorage_) {
     return false;
   }
   return pieceStorage_->downloadFinished();
@@ -179,35 +181,35 @@ bool RequestGroup::downloadFinished() const
 
 bool RequestGroup::allDownloadFinished() const
 {
-  if(!pieceStorage_) {
+  if (!pieceStorage_) {
     return false;
   }
   return pieceStorage_->allDownloadFinished();
 }
 
-error_code::Value RequestGroup::downloadResult() const
+std::pair<error_code::Value, std::string> RequestGroup::downloadResult() const
 {
-  if(downloadFinished() && !downloadContext_->isChecksumVerificationNeeded()) {
-    return error_code::FINISHED;
+  if (downloadFinished() && !downloadContext_->isChecksumVerificationNeeded()) {
+    return std::make_pair(error_code::FINISHED, "");
   }
 
-  if(haltReason_ == RequestGroup::USER_REQUEST) {
-    return error_code::REMOVED;
+  if (haltReason_ == RequestGroup::USER_REQUEST) {
+    return std::make_pair(error_code::REMOVED, "");
   }
 
-  if(lastErrorCode_ == error_code::UNDEFINED) {
-    if(haltReason_ == RequestGroup::SHUTDOWN_SIGNAL) {
-      return error_code::IN_PROGRESS;
+  if (lastErrorCode_ == error_code::UNDEFINED) {
+    if (haltReason_ == RequestGroup::SHUTDOWN_SIGNAL) {
+      return std::make_pair(error_code::IN_PROGRESS, "");
     }
-    return error_code::UNKNOWN_ERROR;
+    return std::make_pair(error_code::UNKNOWN_ERROR, "");
   }
 
-  return lastErrorCode_;
+  return std::make_pair(lastErrorCode_, lastErrorMessage_);
 }
 
 void RequestGroup::closeFile()
 {
-  if(pieceStorage_) {
+  if (pieceStorage_) {
     pieceStorage_->flushWrDiskCacheEntry();
     pieceStorage_->getDiskAdaptor()->closeFile();
   }
@@ -217,11 +219,11 @@ void RequestGroup::closeFile()
 // that this function open file.
 std::unique_ptr<CheckIntegrityEntry> RequestGroup::createCheckIntegrityEntry()
 {
-  auto infoFile = std::make_shared<DefaultBtProgressInfoFile>
-    (downloadContext_, pieceStorage_, option_.get());
+  auto infoFile = std::make_shared<DefaultBtProgressInfoFile>(
+      downloadContext_, pieceStorage_, option_.get());
 
-  if(option_->getAsBool(PREF_CHECK_INTEGRITY) &&
-     downloadContext_->isPieceHashVerificationAvailable()) {
+  if (option_->getAsBool(PREF_CHECK_INTEGRITY) &&
+      downloadContext_->isPieceHashVerificationAvailable()) {
     // When checking piece hash, we don't care file is downloaded and
     // infoFile exists.
     loadAndOpenFile(infoFile);
@@ -229,25 +231,23 @@ std::unique_ptr<CheckIntegrityEntry> RequestGroup::createCheckIntegrityEntry()
   }
 
   if (isPreLocalFileCheckEnabled() &&
-      (infoFile->exists() ||
-       (File(getFirstFilePath()).exists() && option_->getAsBool(PREF_CONTINUE))
-       )) {
+      (infoFile->exists() || (File(getFirstFilePath()).exists() &&
+                              option_->getAsBool(PREF_CONTINUE)))) {
     // If infoFile exists or -c option is given, we need to check
     // download has been completed (which is determined after
     // loadAndOpenFile()). If so, use ChecksumCheckIntegrityEntry when
     // verification is enabled, because CreateRequestCommand does not
     // issue checksum verification and download fails without it.
     loadAndOpenFile(infoFile);
-    if(downloadFinished()) {
-      if(downloadContext_->isChecksumVerificationNeeded()) {
+    if (downloadFinished()) {
+      if (downloadContext_->isChecksumVerificationNeeded()) {
         A2_LOG_INFO(MSG_HASH_CHECK_NOT_DONE);
         auto tempEntry = make_unique<ChecksumCheckIntegrityEntry>(this);
         tempEntry->setRedownload(true);
         return std::move(tempEntry);
       }
       downloadContext_->setChecksumVerified(true);
-      A2_LOG_NOTICE(fmt(MSG_DOWNLOAD_ALREADY_COMPLETED,
-                        gid_->toHex().c_str(),
+      A2_LOG_NOTICE(fmt(MSG_DOWNLOAD_ALREADY_COMPLETED, gid_->toHex().c_str(),
                         downloadContext_->getBasePath().c_str()));
       return nullptr;
     }
@@ -267,8 +267,8 @@ std::unique_ptr<CheckIntegrityEntry> RequestGroup::createCheckIntegrityEntry()
   return make_unique<StreamCheckIntegrityEntry>(this);
 }
 
-void RequestGroup::createInitialCommand
-(std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e)
+void RequestGroup::createInitialCommand(
+    std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e)
 {
   // Start session timer here.  When file size becomes known, it will
   // be reset again in *FileAllocationEntry, because hash check and
@@ -280,45 +280,45 @@ void RequestGroup::createInitialCommand
     auto torrentAttrs = bittorrent::getTorrentAttrs(downloadContext_);
     bool metadataGetMode = torrentAttrs->metadata.empty();
     if (option_->getAsBool(PREF_DRY_RUN)) {
-      throw DOWNLOAD_FAILURE_EXCEPTION
-        ("Cancel BitTorrent download in dry-run context.");
+      throw DOWNLOAD_FAILURE_EXCEPTION(
+          "Cancel BitTorrent download in dry-run context.");
     }
     auto& btRegistry = e->getBtRegistry();
     if (btRegistry->getDownloadContext(torrentAttrs->infoHash)) {
       // TODO If metadataGetMode == false and each FileEntry has
       // URI, then go without BT.
-      throw DOWNLOAD_FAILURE_EXCEPTION2(fmt("InfoHash %s is already registered.",
-                                            bittorrent::getInfoHashString(downloadContext_).c_str()),
-                                        error_code::DUPLICATE_INFO_HASH);
+      throw DOWNLOAD_FAILURE_EXCEPTION2(
+          fmt("InfoHash %s is already registered.",
+              bittorrent::getInfoHashString(downloadContext_).c_str()),
+          error_code::DUPLICATE_INFO_HASH);
     }
     if (metadataGetMode) {
       // Use UnknownLengthPieceStorage.
       initPieceStorage();
     }
-    else if(e->getRequestGroupMan()->isSameFileBeingDownloaded(this)) {
-      throw DOWNLOAD_FAILURE_EXCEPTION2(fmt(EX_DUPLICATE_FILE_DOWNLOAD,
-                                            downloadContext_->getBasePath().c_str()),
-                                        error_code::DUPLICATE_DOWNLOAD);
+    else if (e->getRequestGroupMan()->isSameFileBeingDownloaded(this)) {
+      throw DOWNLOAD_FAILURE_EXCEPTION2(
+          fmt(EX_DUPLICATE_FILE_DOWNLOAD,
+              downloadContext_->getBasePath().c_str()),
+          error_code::DUPLICATE_DOWNLOAD);
     }
     else {
       initPieceStorage();
-      if(downloadContext_->getFileEntries().size() > 1) {
+      if (downloadContext_->getFileEntries().size() > 1) {
         pieceStorage_->setupFileFilter();
       }
     }
 
     std::shared_ptr<DefaultBtProgressInfoFile> progressInfoFile;
-    if(!metadataGetMode) {
-      progressInfoFile = std::make_shared<DefaultBtProgressInfoFile>
-        (downloadContext_,
-         pieceStorage_,
-         option_.get());
+    if (!metadataGetMode) {
+      progressInfoFile = std::make_shared<DefaultBtProgressInfoFile>(
+          downloadContext_, pieceStorage_, option_.get());
     }
 
     auto btRuntime = std::make_shared<BtRuntime>();
     btRuntime->setMaxPeers(option_->getAsInt(PREF_BT_MAX_PEERS));
     btRuntime_ = btRuntime.get();
-    if(progressInfoFile) {
+    if (progressInfoFile) {
       progressInfoFile->setBtRuntime(btRuntime);
     }
 
@@ -326,55 +326,76 @@ void RequestGroup::createInitialCommand
     peerStorage->setBtRuntime(btRuntime);
     peerStorage->setPieceStorage(pieceStorage_);
     peerStorage_ = peerStorage.get();
-    if(progressInfoFile) {
+    if (progressInfoFile) {
       progressInfoFile->setPeerStorage(peerStorage);
     }
 
-    auto btAnnounce = std::make_shared<DefaultBtAnnounce>
-      (downloadContext_.get(),
-       option_.get());
+    auto btAnnounce = std::make_shared<DefaultBtAnnounce>(
+        downloadContext_.get(), option_.get());
     btAnnounce->setBtRuntime(btRuntime);
     btAnnounce->setPieceStorage(pieceStorage_);
     btAnnounce->setPeerStorage(peerStorage);
-    btAnnounce->setUserDefinedInterval
-      (std::chrono::seconds(option_->getAsInt(PREF_BT_TRACKER_INTERVAL)));
+    btAnnounce->setUserDefinedInterval(
+        std::chrono::seconds(option_->getAsInt(PREF_BT_TRACKER_INTERVAL)));
     btAnnounce->shuffleAnnounce();
 
     assert(!btRegistry->get(gid_->getNumericId()));
-    btRegistry->put(gid_->getNumericId(), make_unique<BtObject>
-                    (downloadContext_,
-                     pieceStorage_,
-                     peerStorage,
-                     btAnnounce,
-                     btRuntime,
-                     (progressInfoFile ?
-                      progressInfoFile : progressInfoFile_)));
+    btRegistry->put(
+        gid_->getNumericId(),
+        make_unique<BtObject>(
+            downloadContext_, pieceStorage_, peerStorage, btAnnounce, btRuntime,
+            (progressInfoFile ? progressInfoFile : progressInfoFile_)));
 
     if (option_->getAsBool(PREF_ENABLE_DHT) ||
         (!e->getOption()->getAsBool(PREF_DISABLE_IPV6) &&
          option_->getAsBool(PREF_ENABLE_DHT6))) {
 
       if (option_->getAsBool(PREF_ENABLE_DHT)) {
-        e->addCommand(DHTSetup().setup(e, AF_INET));
+        std::vector<std::unique_ptr<Command>> c, rc;
+        std::tie(c, rc) = DHTSetup().setup(e, AF_INET);
+
+        e->addCommand(std::move(c));
+        for (auto& a : rc) {
+          e->addRoutineCommand(std::move(a));
+        }
       }
 
       if (!e->getOption()->getAsBool(PREF_DISABLE_IPV6) &&
           option_->getAsBool(PREF_ENABLE_DHT6)) {
-        e->addCommand(DHTSetup().setup(e, AF_INET6));
+        std::vector<std::unique_ptr<Command>> c, rc;
+        std::tie(c, rc) = DHTSetup().setup(e, AF_INET6);
+
+        e->addCommand(std::move(c));
+        for (auto& a : rc) {
+          e->addRoutineCommand(std::move(a));
+        }
       }
       const auto& nodes = torrentAttrs->nodes;
-      // TODO Are nodes in torrent IPv4 only?
-      if(!torrentAttrs->privateTorrent &&
-         !nodes.empty() && DHTRegistry::isInitialized()) {
-        auto command = make_unique<DHTEntryPointNameResolveCommand>
-          (e->newCUID(), e, nodes);
-        command->setTaskQueue(DHTRegistry::getData().taskQueue.get());
-        command->setTaskFactory(DHTRegistry::getData().taskFactory.get());
-        command->setRoutingTable(DHTRegistry::getData().routingTable.get());
-        command->setLocalNode(DHTRegistry::getData().localNode);
-        e->addCommand(std::move(command));
+      if (!torrentAttrs->privateTorrent && !nodes.empty()) {
+        if (DHTRegistry::isInitialized()) {
+          auto command = make_unique<DHTEntryPointNameResolveCommand>(
+              e->newCUID(), e, AF_INET, nodes);
+          const auto& data = DHTRegistry::getData();
+          command->setTaskQueue(data.taskQueue.get());
+          command->setTaskFactory(data.taskFactory.get());
+          command->setRoutingTable(data.routingTable.get());
+          command->setLocalNode(data.localNode);
+          e->addCommand(std::move(command));
+        }
+
+        if (DHTRegistry::isInitialized6()) {
+          auto command = make_unique<DHTEntryPointNameResolveCommand>(
+              e->newCUID(), e, AF_INET6, nodes);
+          const auto& data = DHTRegistry::getData6();
+          command->setTaskQueue(data.taskQueue.get());
+          command->setTaskFactory(data.taskFactory.get());
+          command->setRoutingTable(data.routingTable.get());
+          command->setLocalNode(data.localNode);
+          e->addCommand(std::move(command));
+        }
       }
-    } else if(metadataGetMode) {
+    }
+    else if (metadataGetMode) {
       A2_LOG_NOTICE(_("For BitTorrent Magnet URI, enabling DHT is strongly"
                       " recommended. See --enable-dht option."));
     }
@@ -397,27 +418,27 @@ void RequestGroup::createInitialCommand
         // truncate the file to downloadContext_->getTotalLength()
         A2_LOG_DEBUG(fmt("File size not match. File is opened in writable"
                          " mode. Expected:%" PRId64 " Actual:%" PRId64 "",
-                         downloadContext_->getTotalLength(),
-                         actualFileSize));
+                         downloadContext_->getTotalLength(), actualFileSize));
       }
     }
     // Call Load, Save and file allocation command here
-    if(progressInfoFile->exists()) {
+    if (progressInfoFile->exists()) {
       // load .aria2 file if it exists.
       progressInfoFile->load();
       pieceStorage_->getDiskAdaptor()->openFile();
     }
-    else if(pieceStorage_->getDiskAdaptor()->fileExists()) {
-      if(!option_->getAsBool(PREF_CHECK_INTEGRITY) &&
-         !option_->getAsBool(PREF_ALLOW_OVERWRITE) &&
-         !option_->getAsBool(PREF_BT_SEED_UNVERIFIED)) {
+    else if (pieceStorage_->getDiskAdaptor()->fileExists()) {
+      if (!option_->getAsBool(PREF_CHECK_INTEGRITY) &&
+          !option_->getAsBool(PREF_ALLOW_OVERWRITE) &&
+          !option_->getAsBool(PREF_BT_SEED_UNVERIFIED)) {
         // TODO we need this->haltRequested = true?
-        throw DOWNLOAD_FAILURE_EXCEPTION2(fmt(MSG_FILE_ALREADY_EXISTS,
-                                              downloadContext_->getBasePath().c_str()),
-                                          error_code::FILE_ALREADY_EXISTS);
+        throw DOWNLOAD_FAILURE_EXCEPTION2(
+            fmt(MSG_FILE_ALREADY_EXISTS,
+                downloadContext_->getBasePath().c_str()),
+            error_code::FILE_ALREADY_EXISTS);
       }
       pieceStorage_->getDiskAdaptor()->openFile();
-      if(option_->getAsBool(PREF_BT_SEED_UNVERIFIED)) {
+      if (option_->getAsBool(PREF_BT_SEED_UNVERIFIED)) {
         pieceStorage_->markAllPiecesDone();
       }
     }
@@ -448,14 +469,12 @@ void RequestGroup::createInitialCommand
       createNextCommand(commands, e, 1);
       return;
     }
-    auto progressInfoFile = std::make_shared<DefaultBtProgressInfoFile>
-      (downloadContext_,
-       nullptr,
-       option_.get());
+    auto progressInfoFile = std::make_shared<DefaultBtProgressInfoFile>(
+        downloadContext_, nullptr, option_.get());
     adjustFilename(progressInfoFile);
     initPieceStorage();
     auto checkEntry = createCheckIntegrityEntry();
-    if(checkEntry) {
+    if (checkEntry) {
       processCheckIntegrityEntry(commands, std::move(checkEntry), e);
     }
     return;
@@ -463,26 +482,25 @@ void RequestGroup::createInitialCommand
 
   // TODO --dry-run is not supported for multifile download for now.
   if (option_->getAsBool(PREF_DRY_RUN)) {
-    throw DOWNLOAD_FAILURE_EXCEPTION
-      ("--dry-run in multi-file download is not supported yet.");
+    throw DOWNLOAD_FAILURE_EXCEPTION(
+        "--dry-run in multi-file download is not supported yet.");
   }
   // TODO file size is known in this context?
 
   // In this context, multiple FileEntry objects are in
   // DownloadContext.
   if (e->getRequestGroupMan()->isSameFileBeingDownloaded(this)) {
-    throw DOWNLOAD_FAILURE_EXCEPTION2(fmt(EX_DUPLICATE_FILE_DOWNLOAD,
-                                          downloadContext_->getBasePath().c_str()),
-                                      error_code::DUPLICATE_DOWNLOAD);
+    throw DOWNLOAD_FAILURE_EXCEPTION2(
+        fmt(EX_DUPLICATE_FILE_DOWNLOAD,
+            downloadContext_->getBasePath().c_str()),
+        error_code::DUPLICATE_DOWNLOAD);
   }
   initPieceStorage();
   if (downloadContext_->getFileEntries().size() > 1) {
     pieceStorage_->setupFileFilter();
   }
-  auto progressInfoFile = std::make_shared<DefaultBtProgressInfoFile>
-    (downloadContext_,
-     pieceStorage_,
-     option_.get());
+  auto progressInfoFile = std::make_shared<DefaultBtProgressInfoFile>(
+      downloadContext_, pieceStorage_, option_.get());
   removeDefunctControlFile(progressInfoFile);
   // Call Load, Save and file allocation command here
   if (progressInfoFile->exists()) {
@@ -491,33 +509,33 @@ void RequestGroup::createInitialCommand
     pieceStorage_->getDiskAdaptor()->openFile();
   }
   else if (pieceStorage_->getDiskAdaptor()->fileExists()) {
-    if(!isCheckIntegrityReady() && !option_->getAsBool(PREF_ALLOW_OVERWRITE)) {
+    if (!isCheckIntegrityReady() && !option_->getAsBool(PREF_ALLOW_OVERWRITE)) {
       // TODO we need this->haltRequested = true?
-      throw DOWNLOAD_FAILURE_EXCEPTION2(fmt(MSG_FILE_ALREADY_EXISTS,
-                                            downloadContext_->getBasePath().c_str()),
-                                        error_code::FILE_ALREADY_EXISTS);
+      throw DOWNLOAD_FAILURE_EXCEPTION2(
+          fmt(MSG_FILE_ALREADY_EXISTS, downloadContext_->getBasePath().c_str()),
+          error_code::FILE_ALREADY_EXISTS);
     }
     pieceStorage_->getDiskAdaptor()->openFile();
-  } else {
+  }
+  else {
     pieceStorage_->getDiskAdaptor()->openFile();
   }
   progressInfoFile_ = progressInfoFile;
   processCheckIntegrityEntry(commands,
-                             make_unique<StreamCheckIntegrityEntry>(this),
-                             e);
+                             make_unique<StreamCheckIntegrityEntry>(this), e);
 }
 
-void RequestGroup::processCheckIntegrityEntry
-(std::vector<std::unique_ptr<Command>>& commands,
- std::unique_ptr<CheckIntegrityEntry> entry, DownloadEngine* e)
+void RequestGroup::processCheckIntegrityEntry(
+    std::vector<std::unique_ptr<Command>>& commands,
+    std::unique_ptr<CheckIntegrityEntry> entry, DownloadEngine* e)
 {
   int64_t actualFileSize = pieceStorage_->getDiskAdaptor()->size();
-  if(actualFileSize > downloadContext_->getTotalLength()) {
+  if (actualFileSize > downloadContext_->getTotalLength()) {
     entry->cutTrailingGarbage();
   }
-  if((option_->getAsBool(PREF_CHECK_INTEGRITY) ||
-      downloadContext_->isChecksumVerificationNeeded()) &&
-     entry->isValidationReady()) {
+  if ((option_->getAsBool(PREF_CHECK_INTEGRITY) ||
+       downloadContext_->isChecksumVerificationNeeded()) &&
+      entry->isValidationReady()) {
     entry->initValidator();
     // Don't save control file(.aria2 file) when user presses
     // control-c key while aria2 is checking hashes. If control file
@@ -536,27 +554,25 @@ void RequestGroup::processCheckIntegrityEntry
 void RequestGroup::initPieceStorage()
 {
   std::shared_ptr<PieceStorage> tempPieceStorage;
-  if(downloadContext_->knowsTotalLength() &&
-     // Following conditions are needed for chunked encoding with
-     // content-length = 0. Google's dl server used this before.
-     (downloadContext_->getTotalLength() > 0
+  if (downloadContext_->knowsTotalLength() &&
+      // Following conditions are needed for chunked encoding with
+      // content-length = 0. Google's dl server used this before.
+      (downloadContext_->getTotalLength() > 0
 #ifdef ENABLE_BITTORRENT
-      || downloadContext_->hasAttribute(CTX_ATTR_BT)
+       || downloadContext_->hasAttribute(CTX_ATTR_BT)
 #endif // ENABLE_BITTORRENT
-      )) {
+           )) {
 #ifdef ENABLE_BITTORRENT
-    auto ps = std::make_shared<DefaultPieceStorage>
-      (downloadContext_, option_.get());
+    auto ps =
+        std::make_shared<DefaultPieceStorage>(downloadContext_, option_.get());
     if (downloadContext_->hasAttribute(CTX_ATTR_BT)) {
-      if (isUriSuppliedForRequsetFileEntry
-          (downloadContext_->getFileEntries().begin(),
-           downloadContext_->getFileEntries().end())) {
+      if (isUriSuppliedForRequsetFileEntry(
+              downloadContext_->getFileEntries().begin(),
+              downloadContext_->getFileEntries().end())) {
         // Use LongestSequencePieceSelector when HTTP/FTP/BitTorrent
-        // integrated downloads. Currently multi-file integrated
-        // download is not supported.
+        // integrated downloads.
         A2_LOG_DEBUG("Using LongestSequencePieceSelector");
         ps->setPieceSelector(make_unique<LongestSequencePieceSelector>());
-
       }
       if (option_->defined(PREF_BT_PRIORITIZE_PIECE)) {
         std::vector<size_t> result;
@@ -567,16 +583,16 @@ void RequestGroup::initPieceStorage()
         if (!result.empty()) {
           std::shuffle(std::begin(result), std::end(result),
                        *SimpleRandomizer::getInstance());
-          auto priSelector = make_unique<PriorityPieceSelector>
-            (ps->popPieceSelector());
+          auto priSelector =
+              make_unique<PriorityPieceSelector>(ps->popPieceSelector());
           priSelector->setPriorityPiece(std::begin(result), std::end(result));
           ps->setPieceSelector(std::move(priSelector));
         }
       }
     }
-#else // !ENABLE_BITTORRENT
-    auto ps = std::make_shared<DefaultPieceStorage>
-      (downloadContext_, option_.get());
+#else  // !ENABLE_BITTORRENT
+    auto ps =
+        std::make_shared<DefaultPieceStorage>(downloadContext_, option_.get());
 #endif // !ENABLE_BITTORRENT
     if (requestGroupMan_) {
       ps->setWrDiskCache(requestGroupMan_->getWrDiskCache());
@@ -594,12 +610,42 @@ void RequestGroup::initPieceStorage()
     tempPieceStorage = ps;
   }
   tempPieceStorage->initStorage();
-  if(requestGroupMan_) {
-    tempPieceStorage->getDiskAdaptor()->setOpenedFileCounter
-      (requestGroupMan_->getOpenedFileCounter());
+  if (requestGroupMan_) {
+    tempPieceStorage->getDiskAdaptor()->setOpenedFileCounter(
+        requestGroupMan_->getOpenedFileCounter());
   }
-  segmentMan_ = std::make_shared<SegmentMan>(downloadContext_, tempPieceStorage);
+  segmentMan_ =
+      std::make_shared<SegmentMan>(downloadContext_, tempPieceStorage);
   pieceStorage_ = tempPieceStorage;
+
+#ifdef __MINGW32__
+  // Windows build: --file-allocation=falloc uses SetFileValidData
+  // which requires SE_MANAGE_VOLUME_NAME privilege.  SetFileValidData
+  // has security implications (see
+  // https://msdn.microsoft.com/en-us/library/windows/desktop/aa365544%28v=vs.85%29.aspx).
+  static auto gainPrivilegeAttempted = false;
+
+  if (!gainPrivilegeAttempted &&
+      pieceStorage_->getDiskAdaptor()->getFileAllocationMethod() ==
+          DiskAdaptor::FILE_ALLOC_FALLOC &&
+      isFileAllocationEnabled()) {
+    if (!util::gainPrivilege(SE_MANAGE_VOLUME_NAME)) {
+      A2_LOG_WARN("--file-allocation=falloc will not work properly.");
+    }
+    else {
+      A2_LOG_DEBUG("SE_MANAGE_VOLUME_NAME privilege acquired");
+
+      A2_LOG_WARN(
+          "--file-allocation=falloc will use SetFileValidData() API, and "
+          "aria2 uses uninitialized disk space which may contain "
+          "confidential data as the download file space. If it is "
+          "undesirable, --file-allocation=prealloc is slower, but safer "
+          "option.");
+    }
+
+    gainPrivilegeAttempted = true;
+  }
+#endif // __MINGW32__
 }
 
 void RequestGroup::dropPieceStorage()
@@ -611,30 +657,31 @@ void RequestGroup::dropPieceStorage()
 bool RequestGroup::downloadFinishedByFileLength()
 {
   // assuming that a control file doesn't exist.
-  if(!isPreLocalFileCheckEnabled() ||
-     option_->getAsBool(PREF_ALLOW_OVERWRITE)) {
+  if (!isPreLocalFileCheckEnabled() ||
+      option_->getAsBool(PREF_ALLOW_OVERWRITE)) {
     return false;
   }
-  if(!downloadContext_->knowsTotalLength()) {
+  if (!downloadContext_->knowsTotalLength()) {
     return false;
   }
   File outfile(getFirstFilePath());
-  if(outfile.exists() && downloadContext_->getTotalLength() == outfile.size()) {
+  if (outfile.exists() &&
+      downloadContext_->getTotalLength() == outfile.size()) {
     return true;
   }
   return false;
 }
 
-void RequestGroup::adjustFilename
-(const std::shared_ptr<BtProgressInfoFile>& infoFile)
+void RequestGroup::adjustFilename(
+    const std::shared_ptr<BtProgressInfoFile>& infoFile)
 {
-  if(!isPreLocalFileCheckEnabled()) {
+  if (!isPreLocalFileCheckEnabled()) {
     // OK, no need to care about filename.
     return;
   }
   // TODO need this?
-  if(requestGroupMan_) {
-    if(requestGroupMan_->isSameFileBeingDownloaded(this)) {
+  if (requestGroupMan_) {
+    if (requestGroupMan_->isSameFileBeingDownloaded(this)) {
       // The file name must be renamed
       tryAutoFileRenaming();
       A2_LOG_NOTICE(fmt(MSG_FILE_RENAMED, getFirstFilePath().c_str()));
@@ -642,8 +689,7 @@ void RequestGroup::adjustFilename
     }
   }
   if (!option_->getAsBool(PREF_DRY_RUN) &&
-      option_->getAsBool(PREF_REMOVE_CONTROL_FILE) &&
-      infoFile->exists()) {
+      option_->getAsBool(PREF_REMOVE_CONTROL_FILE) && infoFile->exists()) {
     infoFile->removeFile();
     A2_LOG_NOTICE(fmt(_("Removed control file for %s because it is requested by"
                         " user."),
@@ -656,11 +702,11 @@ void RequestGroup::adjustFilename
   }
 
   File outfile(getFirstFilePath());
-  if(outfile.exists() && option_->getAsBool(PREF_CONTINUE) &&
-     outfile.size() <= downloadContext_->getTotalLength()) {
+  if (outfile.exists() && option_->getAsBool(PREF_CONTINUE) &&
+      outfile.size() <= downloadContext_->getTotalLength()) {
     // File exists but user decided to resume it.
   }
-  else if(outfile.exists() && isCheckIntegrityReady()) {
+  else if (outfile.exists() && isCheckIntegrityReady()) {
     // check-integrity existing file
   }
   else {
@@ -668,12 +714,12 @@ void RequestGroup::adjustFilename
   }
 }
 
-void RequestGroup::removeDefunctControlFile
-(const std::shared_ptr<BtProgressInfoFile>& progressInfoFile)
+void RequestGroup::removeDefunctControlFile(
+    const std::shared_ptr<BtProgressInfoFile>& progressInfoFile)
 {
   // Remove the control file if download file doesn't exist
-  if(progressInfoFile->exists() &&
-     !pieceStorage_->getDiskAdaptor()->fileExists()) {
+  if (progressInfoFile->exists() &&
+      !pieceStorage_->getDiskAdaptor()->fileExists()) {
     progressInfoFile->removeFile();
     A2_LOG_NOTICE(fmt(MSG_REMOVED_DEFUNCT_CONTROL_FILE,
                       progressInfoFile->getFilename().c_str(),
@@ -681,16 +727,16 @@ void RequestGroup::removeDefunctControlFile
   }
 }
 
-void RequestGroup::loadAndOpenFile
-(const std::shared_ptr<BtProgressInfoFile>& progressInfoFile)
+void RequestGroup::loadAndOpenFile(
+    const std::shared_ptr<BtProgressInfoFile>& progressInfoFile)
 {
   try {
-    if(!isPreLocalFileCheckEnabled()) {
+    if (!isPreLocalFileCheckEnabled()) {
       pieceStorage_->getDiskAdaptor()->initAndOpenFile();
       return;
     }
     removeDefunctControlFile(progressInfoFile);
-    if(progressInfoFile->exists()) {
+    if (progressInfoFile->exists()) {
       progressInfoFile->load();
       pieceStorage_->getDiskAdaptor()->openExistingFile();
     }
@@ -710,7 +756,7 @@ void RequestGroup::loadAndOpenFile
     }
     setProgressInfoFile(progressInfoFile);
   }
-  catch(RecoverableException& e) {
+  catch (RecoverableException& e) {
     throw DOWNLOAD_FAILURE_EXCEPTION2(EX_DOWNLOAD_ABORTED, e);
   }
 }
@@ -733,19 +779,38 @@ void RequestGroup::shouldCancelDownloadForSafety()
 void RequestGroup::tryAutoFileRenaming()
 {
   if (!option_->getAsBool(PREF_AUTO_FILE_RENAMING)) {
-    throw DOWNLOAD_FAILURE_EXCEPTION2(fmt(MSG_FILE_ALREADY_EXISTS,
-                                          getFirstFilePath().c_str()),
-                                      error_code::FILE_ALREADY_EXISTS);
+    throw DOWNLOAD_FAILURE_EXCEPTION2(
+        fmt(MSG_FILE_ALREADY_EXISTS, getFirstFilePath().c_str()),
+        error_code::FILE_ALREADY_EXISTS);
   }
 
   std::string filepath = getFirstFilePath();
-  if(filepath.empty()) {
-    throw DOWNLOAD_FAILURE_EXCEPTION2(fmt("File renaming failed: %s",
-                                          getFirstFilePath().c_str()),
-                                      error_code::FILE_RENAMING_FAILED);
+  if (filepath.empty()) {
+    throw DOWNLOAD_FAILURE_EXCEPTION2(
+        fmt("File renaming failed: %s", getFirstFilePath().c_str()),
+        error_code::FILE_RENAMING_FAILED);
+  }
+  auto fn = filepath;
+  std::string ext;
+  const auto idx = fn.find_last_of(".");
+  const auto slash = fn.find_last_of("\\/");
+  // Do extract the extension, as in "file.ext" = "file" and ".ext",
+  // but do not consider ".file" to be a file name without extension instead
+  // of a blank file name and an extension of ".file"
+  if (idx != std::string::npos &&
+      // fn has no path component and starts with a dot, but has no extension
+      // otherwise
+      idx != 0 &&
+      // has a file path component if we found a slash.
+      // if slash == idx - 1 this means a form of "*/.*", so the file name
+      // starts with a dot, has no extension otherwise, and therefore do not
+      // extract an extension either
+      (slash == std::string::npos || slash < idx - 1)) {
+    ext = fn.substr(idx);
+    fn = fn.substr(0, idx);
   }
   for (int i = 1; i < 10000; ++i) {
-    auto newfilename = fmt("%s.%d", filepath.c_str(), i);
+    auto newfilename = fmt("%s.%d%s", fn.c_str(), i, ext.c_str());
     File newfile(newfilename);
     File ctrlfile(newfile.getPath() + DefaultBtProgressInfoFile::getSuffix());
     if (!newfile.exists() || (newfile.exists() && ctrlfile.exists())) {
@@ -753,18 +818,18 @@ void RequestGroup::tryAutoFileRenaming()
       return;
     }
   }
-  throw DOWNLOAD_FAILURE_EXCEPTION2(fmt("File renaming failed: %s",
-                                        getFirstFilePath().c_str()),
-                                    error_code::FILE_RENAMING_FAILED);
+  throw DOWNLOAD_FAILURE_EXCEPTION2(
+      fmt("File renaming failed: %s", getFirstFilePath().c_str()),
+      error_code::FILE_RENAMING_FAILED);
 }
 
-void RequestGroup::createNextCommandWithAdj
-(std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e,
- int numAdj)
+void RequestGroup::createNextCommandWithAdj(
+    std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e,
+    int numAdj)
 {
   int numCommand;
   if (getTotalLength() == 0) {
-    numCommand = 1+numAdj;
+    numCommand = 1 + numAdj;
   }
   else {
     numCommand = std::min(downloadContext_->getNumPieces(),
@@ -777,14 +842,15 @@ void RequestGroup::createNextCommandWithAdj
   }
 }
 
-void RequestGroup::createNextCommand
-(std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e)
+void RequestGroup::createNextCommand(
+    std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e)
 {
   int numCommand;
   if (getTotalLength() == 0) {
     if (numStreamCommand_ > 0) {
       numCommand = 0;
-    } else {
+    }
+    else {
       numCommand = 1;
     }
   }
@@ -792,8 +858,9 @@ void RequestGroup::createNextCommand
     numCommand = 0;
   }
   else {
-    numCommand = std::min(downloadContext_->getNumPieces(),
-                          static_cast<size_t>(numConcurrentCommand_-numStreamCommand_));
+    numCommand = std::min(
+        downloadContext_->getNumPieces(),
+        static_cast<size_t>(numConcurrentCommand_ - numStreamCommand_));
   }
 
   if (numCommand > 0) {
@@ -801,13 +868,13 @@ void RequestGroup::createNextCommand
   }
 }
 
-void RequestGroup::createNextCommand
-(std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e,
- int numCommand)
+void RequestGroup::createNextCommand(
+    std::vector<std::unique_ptr<Command>>& commands, DownloadEngine* e,
+    int numCommand)
 {
   for (; numCommand > 0; --numCommand) {
-    commands.push_back(make_unique<CreateRequestCommand>
-                       (e->newCUID(), this, e));
+    commands.push_back(
+        make_unique<CreateRequestCommand>(e->newCUID(), this, e));
   }
   if (!commands.empty()) {
     e->setNoWait(true);
@@ -818,8 +885,8 @@ std::string RequestGroup::getFirstFilePath() const
 {
   assert(downloadContext_);
   if (inMemoryDownload()) {
-    return "[MEMORY]" + File(downloadContext_->getFirstFileEntry()->getPath())
-      .getBasename();
+    return "[MEMORY]" +
+           File(downloadContext_->getFirstFileEntry()->getPath()).getBasename();
   }
   return downloadContext_->getFirstFileEntry()->getPath();
 }
@@ -853,13 +920,12 @@ int64_t RequestGroup::getCompletedLength() const
 void RequestGroup::validateFilename(const std::string& expectedFilename,
                                     const std::string& actualFilename) const
 {
-  if(expectedFilename.empty()) {
+  if (expectedFilename.empty()) {
     return;
   }
 
-  if(expectedFilename != actualFilename) {
-    throw DL_ABORT_EX(fmt(EX_FILENAME_MISMATCH,
-                          expectedFilename.c_str(),
+  if (expectedFilename != actualFilename) {
+    throw DL_ABORT_EX(fmt(EX_FILENAME_MISMATCH, expectedFilename.c_str(),
                           actualFilename.c_str()));
   }
 }
@@ -867,13 +933,13 @@ void RequestGroup::validateFilename(const std::string& expectedFilename,
 void RequestGroup::validateTotalLength(int64_t expectedTotalLength,
                                        int64_t actualTotalLength) const
 {
-  if(expectedTotalLength <= 0) {
+  if (expectedTotalLength <= 0) {
     return;
   }
 
-  if(expectedTotalLength != actualTotalLength) {
-    throw DL_ABORT_EX(fmt(EX_SIZE_MISMATCH, expectedTotalLength,
-                          actualTotalLength));
+  if (expectedTotalLength != actualTotalLength) {
+    throw DL_ABORT_EX(
+        fmt(EX_SIZE_MISMATCH, expectedTotalLength, actualTotalLength));
   }
 }
 
@@ -888,46 +954,31 @@ void RequestGroup::validateTotalLength(int64_t actualTotalLength) const
   validateTotalLength(getTotalLength(), actualTotalLength);
 }
 
-void RequestGroup::increaseStreamCommand()
-{
-  ++numStreamCommand_;
-}
+void RequestGroup::increaseStreamCommand() { ++numStreamCommand_; }
 
-void RequestGroup::decreaseStreamCommand()
-{
-  --numStreamCommand_;
-}
+void RequestGroup::decreaseStreamCommand() { --numStreamCommand_; }
 
-void RequestGroup::increaseStreamConnection()
-{
-  ++numStreamConnection_;
-}
+void RequestGroup::increaseStreamConnection() { ++numStreamConnection_; }
 
-void RequestGroup::decreaseStreamConnection()
-{
-  --numStreamConnection_;
-}
+void RequestGroup::decreaseStreamConnection() { --numStreamConnection_; }
 
 int RequestGroup::getNumConnection() const
 {
   int numConnection = numStreamConnection_;
 #ifdef ENABLE_BITTORRENT
-  if(btRuntime_) {
+  if (btRuntime_) {
     numConnection += btRuntime_->getConnections();
   }
 #endif // ENABLE_BITTORRENT
   return numConnection;
 }
 
-void RequestGroup::increaseNumCommand()
-{
-  ++numCommand_;
-}
+void RequestGroup::increaseNumCommand() { ++numCommand_; }
 
 void RequestGroup::decreaseNumCommand()
 {
   --numCommand_;
-  if(!numCommand_ && requestGroupMan_) {
+  if (!numCommand_ && requestGroupMan_) {
     A2_LOG_DEBUG(fmt("GID#%s - Request queue check", gid_->toHex().c_str()));
     requestGroupMan_->requestQueueCheck();
   }
@@ -937,9 +988,9 @@ TransferStat RequestGroup::calculateStat() const
 {
   TransferStat stat = downloadContext_->getNetStat().toTransferStat();
 #ifdef ENABLE_BITTORRENT
-  if(btRuntime_) {
-    stat.allTimeUploadLength = btRuntime_->getUploadLengthAtStartup() +
-      stat.sessionUploadLength;
+  if (btRuntime_) {
+    stat.allTimeUploadLength =
+        btRuntime_->getUploadLengthAtStartup() + stat.sessionUploadLength;
   }
 #endif // ENABLE_BITTORRENT
   return stat;
@@ -948,12 +999,12 @@ TransferStat RequestGroup::calculateStat() const
 void RequestGroup::setHaltRequested(bool f, HaltReason haltReason)
 {
   haltRequested_ = f;
-  if(haltRequested_) {
+  if (haltRequested_) {
     pauseRequested_ = false;
     haltReason_ = haltReason;
   }
 #ifdef ENABLE_BITTORRENT
-  if(btRuntime_) {
+  if (btRuntime_) {
     btRuntime_->setHalt(f);
   }
 #endif // ENABLE_BITTORRENT
@@ -965,10 +1016,9 @@ void RequestGroup::setForceHaltRequested(bool f, HaltReason haltReason)
   forceHaltRequested_ = f;
 }
 
-void RequestGroup::setPauseRequested(bool f)
-{
-  pauseRequested_ = f;
-}
+void RequestGroup::setPauseRequested(bool f) { pauseRequested_ = f; }
+
+void RequestGroup::setRestartRequested(bool f) { restartRequested_ = f; }
 
 void RequestGroup::releaseRuntimeResource(DownloadEngine* e)
 {
@@ -977,13 +1027,16 @@ void RequestGroup::releaseRuntimeResource(DownloadEngine* e)
   btRuntime_ = nullptr;
   peerStorage_ = nullptr;
 #endif // ENABLE_BITTORRENT
-  if(pieceStorage_) {
-    pieceStorage_->removeAdvertisedPiece(0_s);
+  if (pieceStorage_) {
+    pieceStorage_->removeAdvertisedPiece(Timer::zero());
   }
   // Don't reset segmentMan_ and pieceStorage_ here to provide
   // progress information via RPC
   progressInfoFile_ = std::make_shared<NullProgressInfoFile>();
   downloadContext_->releaseRuntimeResource();
+  // Reset seedOnly_, so that we can handle pause/unpause-ing seeding
+  // torrent with --bt-detach-seed-only.
+  seedOnly_ = false;
 }
 
 void RequestGroup::preDownloadProcessing()
@@ -991,8 +1044,8 @@ void RequestGroup::preDownloadProcessing()
   A2_LOG_DEBUG(fmt("Finding PreDownloadHandler for path %s.",
                    getFirstFilePath().c_str()));
   try {
-    for (const auto& pdh: preDownloadHandlers_) {
-      if(pdh->canHandle(this)) {
+    for (const auto& pdh : preDownloadHandlers_) {
+      if (pdh->canHandle(this)) {
         pdh->execute(this);
         return;
       }
@@ -1007,20 +1060,20 @@ void RequestGroup::preDownloadProcessing()
   return;
 }
 
-void RequestGroup::postDownloadProcessing
-(std::vector<std::shared_ptr<RequestGroup> >& groups)
+void RequestGroup::postDownloadProcessing(
+    std::vector<std::shared_ptr<RequestGroup>>& groups)
 {
   A2_LOG_DEBUG(fmt("Finding PostDownloadHandler for path %s.",
                    getFirstFilePath().c_str()));
   try {
-    for (const auto& pdh: postDownloadHandlers_) {
+    for (const auto& pdh : postDownloadHandlers_) {
       if (pdh->canHandle(this)) {
         pdh->getNextRequestGroups(groups, this);
         return;
       }
     }
   }
-  catch(RecoverableException& ex) {
+  catch (RecoverableException& ex) {
     A2_LOG_ERROR_EX(EX_EXCEPTION_CAUGHT, ex);
   }
 
@@ -1030,15 +1083,15 @@ void RequestGroup::postDownloadProcessing
 void RequestGroup::initializePreDownloadHandler()
 {
 #ifdef ENABLE_BITTORRENT
-  if(option_->get(PREF_FOLLOW_TORRENT) == V_MEM) {
-    preDownloadHandlers_.push_back
-      (download_handlers::getBtPreDownloadHandler());
+  if (option_->get(PREF_FOLLOW_TORRENT) == V_MEM) {
+    preDownloadHandlers_.push_back(
+        download_handlers::getBtPreDownloadHandler());
   }
 #endif // ENABLE_BITTORRENT
 #ifdef ENABLE_METALINK
-  if(option_->get(PREF_FOLLOW_METALINK) == V_MEM) {
-    preDownloadHandlers_.push_back
-      (download_handlers::getMetalinkPreDownloadHandler());
+  if (option_->get(PREF_FOLLOW_METALINK) == V_MEM) {
+    preDownloadHandlers_.push_back(
+        download_handlers::getMetalinkPreDownloadHandler());
   }
 #endif // ENABLE_METALINK
 }
@@ -1046,24 +1099,24 @@ void RequestGroup::initializePreDownloadHandler()
 void RequestGroup::initializePostDownloadHandler()
 {
 #ifdef ENABLE_BITTORRENT
-  if(option_->getAsBool(PREF_FOLLOW_TORRENT) ||
-     option_->get(PREF_FOLLOW_TORRENT) == V_MEM) {
-    postDownloadHandlers_.push_back
-      (download_handlers::getBtPostDownloadHandler());
+  if (option_->getAsBool(PREF_FOLLOW_TORRENT) ||
+      option_->get(PREF_FOLLOW_TORRENT) == V_MEM) {
+    postDownloadHandlers_.push_back(
+        download_handlers::getBtPostDownloadHandler());
   }
 #endif // ENABLE_BITTORRENT
 #ifdef ENABLE_METALINK
-  if(option_->getAsBool(PREF_FOLLOW_METALINK) ||
-     option_->get(PREF_FOLLOW_METALINK) == V_MEM) {
-    postDownloadHandlers_.push_back
-      (download_handlers::getMetalinkPostDownloadHandler());
+  if (option_->getAsBool(PREF_FOLLOW_METALINK) ||
+      option_->get(PREF_FOLLOW_METALINK) == V_MEM) {
+    postDownloadHandlers_.push_back(
+        download_handlers::getMetalinkPostDownloadHandler());
   }
 #endif // ENABLE_METALINK
 }
 
 bool RequestGroup::isDependencyResolved()
 {
-  if(!dependency_) {
+  if (!dependency_) {
     return true;
   }
   return dependency_->resolve();
@@ -1074,8 +1127,8 @@ void RequestGroup::dependsOn(const std::shared_ptr<Dependency>& dep)
   dependency_ = dep;
 }
 
-void RequestGroup::setDiskWriterFactory
-(const std::shared_ptr<DiskWriterFactory>& diskWriterFactory)
+void RequestGroup::setDiskWriterFactory(
+    const std::shared_ptr<DiskWriterFactory>& diskWriterFactory)
 {
   diskWriterFactory_ = diskWriterFactory;
 }
@@ -1090,24 +1143,18 @@ void RequestGroup::addPreDownloadHandler(const PreDownloadHandler* handler)
   preDownloadHandlers_.push_back(handler);
 }
 
-void RequestGroup::clearPostDownloadHandler()
-{
-  postDownloadHandlers_.clear();
-}
+void RequestGroup::clearPostDownloadHandler() { postDownloadHandlers_.clear(); }
 
-void RequestGroup::clearPreDownloadHandler()
-{
-  preDownloadHandlers_.clear();
-}
+void RequestGroup::clearPreDownloadHandler() { preDownloadHandlers_.clear(); }
 
-void RequestGroup::setPieceStorage
-(const std::shared_ptr<PieceStorage>& pieceStorage)
+void RequestGroup::setPieceStorage(
+    const std::shared_ptr<PieceStorage>& pieceStorage)
 {
   pieceStorage_ = pieceStorage;
 }
 
-void RequestGroup::setProgressInfoFile
-(const std::shared_ptr<BtProgressInfoFile>& progressInfoFile)
+void RequestGroup::setProgressInfoFile(
+    const std::shared_ptr<BtProgressInfoFile>& progressInfoFile)
 {
   progressInfoFile_ = progressInfoFile;
 }
@@ -1115,39 +1162,44 @@ void RequestGroup::setProgressInfoFile
 bool RequestGroup::needsFileAllocation() const
 {
   return isFileAllocationEnabled() &&
-    option_->getAsLLInt(PREF_NO_FILE_ALLOCATION_LIMIT) <= getTotalLength() &&
-    !pieceStorage_->getDiskAdaptor()->fileAllocationIterator()->finished();
+         option_->getAsLLInt(PREF_NO_FILE_ALLOCATION_LIMIT) <=
+             getTotalLength() &&
+         !pieceStorage_->getDiskAdaptor()->fileAllocationIterator()->finished();
 }
 
 std::shared_ptr<DownloadResult> RequestGroup::createDownloadResult() const
 {
-  A2_LOG_DEBUG(fmt("GID#%s - Creating DownloadResult.",
-                   gid_->toHex().c_str()));
+  A2_LOG_DEBUG(fmt("GID#%s - Creating DownloadResult.", gid_->toHex().c_str()));
   TransferStat st = calculateStat();
   auto res = std::make_shared<DownloadResult>();
   res->gid = gid_;
+  res->attrs = downloadContext_->getAttributes();
   res->fileEntries = downloadContext_->getFileEntries();
   res->inMemoryDownload = inMemoryDownload_;
   res->sessionDownloadLength = st.sessionDownloadLength;
   res->sessionTime = std::chrono::duration_cast<std::chrono::milliseconds>(
       downloadContext_->calculateSessionTime());
-  res->result = downloadResult();
+
+  auto result = downloadResult();
+  res->result = result.first;
+  res->resultMessage = result.second;
   res->followedBy = followedByGIDs_;
+  res->following = followingGID_;
   res->belongsTo = belongsToGID_;
   res->option = option_;
   res->metadataInfo = metadataInfo_;
   res->totalLength = getTotalLength();
   res->completedLength = getCompletedLength();
   res->uploadLength = st.allTimeUploadLength;
-  if(pieceStorage_ && pieceStorage_->getBitfieldLength() > 0) {
+  if (pieceStorage_ && pieceStorage_->getBitfieldLength() > 0) {
     res->bitfield.assign(pieceStorage_->getBitfield(),
                          pieceStorage_->getBitfield() +
-                         pieceStorage_->getBitfieldLength());
+                             pieceStorage_->getBitfieldLength());
   }
 #ifdef ENABLE_BITTORRENT
-  if(downloadContext_->hasAttribute(CTX_ATTR_BT)) {
+  if (downloadContext_->hasAttribute(CTX_ATTR_BT)) {
     const unsigned char* p = bittorrent::getInfoHash(downloadContext_);
-    res->infoHash.assign(p, p+INFO_HASH_LENGTH);
+    res->infoHash.assign(p, p + INFO_HASH_LENGTH);
   }
 #endif // ENABLE_BITTORRENT
   res->pieceLength = downloadContext_->getPieceLength();
@@ -1159,19 +1211,20 @@ std::shared_ptr<DownloadResult> RequestGroup::createDownloadResult() const
 void RequestGroup::reportDownloadFinished()
 {
   A2_LOG_NOTICE(fmt(MSG_FILE_DOWNLOAD_COMPLETED,
-                    downloadContext_->getBasePath().c_str()));
+                    inMemoryDownload()
+                        ? getFirstFilePath().c_str()
+                        : downloadContext_->getBasePath().c_str()));
   uriSelector_->resetCounters();
 #ifdef ENABLE_BITTORRENT
   if (downloadContext_->hasAttribute(CTX_ATTR_BT)) {
     TransferStat stat = calculateStat();
     int64_t completedLength = getCompletedLength();
-    double shareRatio = completedLength == 0 ?
-      0.0 :
-      1.0 * stat.allTimeUploadLength / completedLength;
+    double shareRatio = completedLength == 0
+                            ? 0.0
+                            : 1.0 * stat.allTimeUploadLength / completedLength;
     auto attrs = bittorrent::getTorrentAttrs(downloadContext_);
-    if(!attrs->metadata.empty()) {
-      A2_LOG_NOTICE(fmt(MSG_SHARE_RATIO_REPORT,
-                        shareRatio,
+    if (!attrs->metadata.empty()) {
+      A2_LOG_NOTICE(fmt(MSG_SHARE_RATIO_REPORT, shareRatio,
                         util::abbrevSize(stat.allTimeUploadLength).c_str(),
                         util::abbrevSize(completedLength).c_str()));
     }
@@ -1209,16 +1262,13 @@ void RequestGroup::increaseAndValidateFileNotFoundCount()
   const int maxCount = option_->getAsInt(PREF_MAX_FILE_NOT_FOUND);
   if (maxCount > 0 && fileNotFoundCount_ >= maxCount &&
       downloadContext_->getNetStat().getSessionDownloadLength() == 0) {
-    throw DOWNLOAD_FAILURE_EXCEPTION2(fmt("Reached max-file-not-found count=%d",
-                                          maxCount),
-                                      error_code::MAX_FILE_NOT_FOUND);
+    throw DOWNLOAD_FAILURE_EXCEPTION2(
+        fmt("Reached max-file-not-found count=%d", maxCount),
+        error_code::MAX_FILE_NOT_FOUND);
   }
 }
 
-void RequestGroup::markInMemoryDownload()
-{
-  inMemoryDownload_ = true;
-}
+void RequestGroup::markInMemoryDownload() { inMemoryDownload_ = true; }
 
 void RequestGroup::setTimeout(std::chrono::seconds timeout)
 {
@@ -1239,7 +1289,7 @@ bool RequestGroup::doesUploadSpeedExceed()
 
 void RequestGroup::saveControlFile() const
 {
-  if(saveControlFile_) {
+  if (saveControlFile_) {
     progressInfoFile_->save();
   }
 }
@@ -1249,11 +1299,11 @@ void RequestGroup::removeControlFile() const
   progressInfoFile_->removeFile();
 }
 
-void RequestGroup::setDownloadContext
-(const std::shared_ptr<DownloadContext>& downloadContext)
+void RequestGroup::setDownloadContext(
+    const std::shared_ptr<DownloadContext>& downloadContext)
 {
   downloadContext_ = downloadContext;
-  if(downloadContext_) {
+  if (downloadContext_) {
     downloadContext_->setOwnerRequestGroup(this);
   }
 }
@@ -1262,23 +1312,39 @@ bool RequestGroup::p2pInvolved() const
 {
 #ifdef ENABLE_BITTORRENT
   return downloadContext_->hasAttribute(CTX_ATTR_BT);
-#else // !ENABLE_BITTORRENT
+#else  // !ENABLE_BITTORRENT
   return false;
 #endif // !ENABLE_BITTORRENT
 }
 
 void RequestGroup::enableSeedOnly()
 {
-  if(seedOnly_ || !option_->getAsBool(PREF_BT_DETACH_SEED_ONLY)) {
+  if (seedOnly_ || !option_->getAsBool(PREF_BT_DETACH_SEED_ONLY)) {
     return;
   }
 
-  if(requestGroupMan_) {
+  if (requestGroupMan_) {
     seedOnly_ = true;
 
     requestGroupMan_->decreaseNumActive();
     requestGroupMan_->requestQueueCheck();
   }
+}
+
+bool RequestGroup::isSeeder() const
+{
+#ifdef ENABLE_BITTORRENT
+  return downloadContext_->hasAttribute(CTX_ATTR_BT) &&
+         !bittorrent::getTorrentAttrs(downloadContext_)->metadata.empty() &&
+         downloadFinished();
+#else  // !ENABLE_BITTORRENT
+  return false;
+#endif // !ENABLE_BITTORRENT
+}
+
+void RequestGroup::setPendingOption(std::shared_ptr<Option> option)
+{
+  pendingOption_ = std::move(option);
 }
 
 } // namespace aria2

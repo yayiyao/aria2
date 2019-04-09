@@ -56,6 +56,7 @@ private:
   DHTTaskQueue* taskQueue_;
 
   DHTTaskFactory* taskFactory_;
+
 public:
   BtPortMessage(uint16_t port);
 
@@ -65,14 +66,12 @@ public:
 
   uint16_t getPort() const { return port_; }
 
-  static std::unique_ptr<BtPortMessage> create
-  (const unsigned char* data, size_t dataLength);
+  static std::unique_ptr<BtPortMessage> create(const unsigned char* data,
+                                               size_t dataLength);
 
   virtual void doReceivedAction() CXX11_OVERRIDE;
 
-  virtual unsigned char* createMessage() CXX11_OVERRIDE;
-
-  virtual size_t getMessageLength() CXX11_OVERRIDE;
+  virtual std::vector<unsigned char> createMessage() CXX11_OVERRIDE;
 
   virtual std::string toString() const CXX11_OVERRIDE;
 

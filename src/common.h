@@ -36,34 +36,34 @@
 #define D_COMMON_H
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+#  include "config.h"
 #endif
 
 #ifdef __MINGW32__
-#ifdef malloc
-#       undef malloc
-#endif
-#ifdef realloc
-#       undef realloc
-#endif
+#  ifdef malloc
+#    undef malloc
+#  endif
+#  ifdef realloc
+#    undef realloc
+#  endif
 #endif // __MINGW32__
 
 #ifdef __MINGW32__
-# define WIN32_LEAN_AND_MEAN
-# ifndef WINVER
-#  define WINVER 0x501
-# endif // !WINVER
-# ifndef _WIN32_WINNT
-#  define _WIN32_WINNT 0x501
-# endif // _WIN32_WINNT
-# ifdef HAVE_WINSOCK2_H
-#  ifndef FD_SETSIZE
-#    define FD_SETSIZE 1024
-#  endif // !FD_SETSIZE
-#  include <winsock2.h>
-#  undef ERROR
-# endif // HAVE_WINSOCK2_H
-# include <windows.h>
+#  define WIN32_LEAN_AND_MEAN
+#  ifndef WINVER
+#    define WINVER 0x501
+#  endif // !WINVER
+#  ifndef _WIN32_WINNT
+#    define _WIN32_WINNT 0x501
+#  endif // _WIN32_WINNT
+#  ifdef HAVE_WINSOCK2_H
+#    ifndef FD_SETSIZE
+#      define FD_SETSIZE 32768
+#    endif // !FD_SETSIZE
+#    include <winsock2.h>
+#    undef ERROR
+#  endif // HAVE_WINSOCK2_H
+#  include <windows.h>
 #endif // __MINGW32__
 
 #ifdef ENABLE_NLS
@@ -75,10 +75,10 @@
 // it is defined as non-function form, this causes compile error. User
 // reported gcc-4.2.2 has this problem. But gcc-4.4.5 does not suffer
 // from this problem.
-# include <gettext.h>
-# define _(String) gettext(String)
+#  include <gettext.h>
+#  define _(String) gettext(String)
 #else // ENABLE_NLS
-# define _(String) String
+#  define _(String) String
 #endif
 
 // use C99 limit macros

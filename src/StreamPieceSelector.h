@@ -45,7 +45,7 @@ namespace aria2 {
 // PieceSelector interface.
 class StreamPieceSelector {
 public:
-  virtual ~StreamPieceSelector() {}
+  virtual ~StreamPieceSelector() = default;
   // Selected piece index will be stored in index.  To ignore some
   // piece indexes from selection, use ignoreBitfield and set
   // corresponding bit. length is the number of byte of
@@ -55,11 +55,8 @@ public:
   // is a advice to derived class not to select piece such which the
   // distance between it and already selected piece is less than
   // minSplitSize.
-  virtual bool select
-  (size_t& index,
-   size_t minSplitSize,
-   const unsigned char* ignoreBitfield,
-   size_t length) = 0;
+  virtual bool select(size_t& index, size_t minSplitSize,
+                      const unsigned char* ignoreBitfield, size_t length) = 0;
 
   // Called when initial bitfield was fixed. Optimize
   // StreamPieceSelector to take advantages of the initial bitfield.

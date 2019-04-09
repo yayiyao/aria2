@@ -45,27 +45,27 @@ private:
   size_t index_;
 
   static const size_t MESSAGE_LENGTH = 9;
+
 protected:
-  template<typename T>
-  static std::unique_ptr<T> create(const unsigned char* data,
-                                   size_t dataLength)
+  template <typename T>
+  static std::unique_ptr<T> create(const unsigned char* data, size_t dataLength)
   {
     bittorrent::assertPayloadLengthEqual(5, dataLength, T::NAME);
     bittorrent::assertID(T::ID, data, T::NAME);
     return make_unique<T>(bittorrent::getIntParam(data, 1));
   }
+
 public:
   IndexBtMessage(uint8_t id, const char* name, size_t index)
-    :SimpleBtMessage(id, name),
-     index_(index) {}
+      : SimpleBtMessage(id, name), index_(index)
+  {
+  }
 
   void setIndex(size_t index) { index_ = index; }
 
   size_t getIndex() const { return index_; }
 
-  virtual unsigned char* createMessage() CXX11_OVERRIDE;
-
-  virtual size_t getMessageLength() CXX11_OVERRIDE;
+  virtual std::vector<unsigned char> createMessage() CXX11_OVERRIDE;
 
   virtual std::string toString() const CXX11_OVERRIDE;
 };

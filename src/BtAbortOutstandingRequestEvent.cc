@@ -37,11 +37,12 @@
 
 namespace aria2 {
 
-BtAbortOutstandingRequestEvent::BtAbortOutstandingRequestEvent
-(const std::shared_ptr<Piece>& piece)
-  : piece_(piece)
-{}
+BtAbortOutstandingRequestEvent::BtAbortOutstandingRequestEvent(
+    const std::shared_ptr<Piece>& piece)
+    : piece_(piece)
+{
+}
 
-BtAbortOutstandingRequestEvent::~BtAbortOutstandingRequestEvent() {}
+BtAbortOutstandingRequestEvent::~BtAbortOutstandingRequestEvent() = default;
 
 } // namespace aria2

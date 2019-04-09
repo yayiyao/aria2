@@ -12,7 +12,7 @@
 
 namespace aria2 {
 
-class BtHaveMessageTest:public CppUnit::TestFixture {
+class BtHaveMessageTest : public CppUnit::TestFixture {
 
   CPPUNIT_TEST_SUITE(BtHaveMessageTest);
   CPPUNIT_TEST(testCreate);
@@ -21,11 +21,10 @@ class BtHaveMessageTest:public CppUnit::TestFixture {
   CPPUNIT_TEST(testDoReceivedAction_goodByeSeeder);
   CPPUNIT_TEST(testToString);
   CPPUNIT_TEST_SUITE_END();
-private:
 
+private:
 public:
-  void setUp() {
-  }
+  void setUp() {}
 
   void testCreate();
   void testCreateMessage();
@@ -34,10 +33,10 @@ public:
   void testToString();
 };
 
-
 CPPUNIT_TEST_SUITE_REGISTRATION(BtHaveMessageTest);
 
-void BtHaveMessageTest::testCreate() {
+void BtHaveMessageTest::testCreate()
+{
   unsigned char msg[9];
   bittorrent::createPeerMessageString(msg, sizeof(msg), 5, 4);
   bittorrent::setIntParam(&msg[5], 12345);
@@ -51,7 +50,8 @@ void BtHaveMessageTest::testCreate() {
     bittorrent::createPeerMessageString(msg, sizeof(msg), 6, 4);
     BtHaveMessage::create(&msg[4], 2);
     CPPUNIT_FAIL("exception must be thrown.");
-  } catch(...) {
+  }
+  catch (...) {
   }
   // case: id is wrong
   try {
@@ -59,22 +59,25 @@ void BtHaveMessageTest::testCreate() {
     bittorrent::createPeerMessageString(msg, sizeof(msg), 5, 5);
     BtHaveMessage::create(&msg[4], 1);
     CPPUNIT_FAIL("exception must be thrown.");
-  } catch(...) {
+  }
+  catch (...) {
   }
 }
 
-void BtHaveMessageTest::testCreateMessage() {
+void BtHaveMessageTest::testCreateMessage()
+{
   BtHaveMessage msg;
   msg.setIndex(12345);
   unsigned char data[9];
   bittorrent::createPeerMessageString(data, sizeof(data), 5, 4);
   bittorrent::setIntParam(&data[5], 12345);
-  unsigned char* rawmsg = msg.createMessage();
-  CPPUNIT_ASSERT(memcmp(rawmsg, data, 9) == 0);
-  delete [] rawmsg;
+  auto rawmsg = msg.createMessage();
+  CPPUNIT_ASSERT_EQUAL((size_t)9, rawmsg.size());
+  CPPUNIT_ASSERT(std::equal(std::begin(rawmsg), std::end(rawmsg), data));
 }
 
-void BtHaveMessageTest::testDoReceivedAction() {
+void BtHaveMessageTest::testDoReceivedAction()
+{
   std::shared_ptr<Peer> peer(new Peer("host", 6969));
   peer->allocateSessionResource(16_k, 256_k);
   BtHaveMessage msg;
@@ -119,12 +122,14 @@ void BtHaveMessageTest::testDoReceivedAction_goodByeSeeder()
   try {
     msg.doReceivedAction();
     CPPUNIT_FAIL("exception must be thrown.");
-  } catch(DlAbortEx& e) {
+  }
+  catch (DlAbortEx& e) {
     // success
   }
 }
 
-void BtHaveMessageTest::testToString() {
+void BtHaveMessageTest::testToString()
+{
   BtHaveMessage msg;
   msg.setIndex(1);
 

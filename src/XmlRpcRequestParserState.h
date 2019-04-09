@@ -50,15 +50,14 @@ class XmlRpcRequestParserStateMachine;
 
 class XmlRpcRequestParserState {
 public:
-  virtual ~XmlRpcRequestParserState() {}
+  virtual ~XmlRpcRequestParserState() = default;
 
   virtual void beginElement(XmlRpcRequestParserStateMachine* psm,
                             const char* name,
-                            const std::vector<XmlAttr>& attrs)= 0;
+                            const std::vector<XmlAttr>& attrs) = 0;
 
   virtual void endElement(XmlRpcRequestParserStateMachine* psm,
-                          const char* name,
-                          std::string characters) = 0;
+                          const char* name, std::string characters) = 0;
 
   virtual bool needsCharactersBuffering() const = 0;
 };

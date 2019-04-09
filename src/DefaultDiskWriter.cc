@@ -36,14 +36,13 @@
 
 namespace aria2 {
 
-DefaultDiskWriter::DefaultDiskWriter(const std::string& filename):
-  AbstractDiskWriter(filename) {}
-
-DefaultDiskWriter::~DefaultDiskWriter() {}
-
-void DefaultDiskWriter::initAndOpenFile(int64_t totalLength)
+DefaultDiskWriter::DefaultDiskWriter(const std::string& filename)
+    : AbstractDiskWriter(filename)
 {
-  createFile();
 }
+
+DefaultDiskWriter::~DefaultDiskWriter() = default;
+
+void DefaultDiskWriter::initAndOpenFile(int64_t totalLength) { createFile(); }
 
 } // namespace aria2

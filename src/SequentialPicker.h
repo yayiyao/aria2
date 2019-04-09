@@ -39,38 +39,27 @@
 
 #include <deque>
 #include <memory>
+#include <functional>
 
 namespace aria2 {
 
-template<typename T>
-class SequentialPicker {
+template <typename T> class SequentialPicker {
 private:
   std::deque<std::unique_ptr<T>> entries_;
   std::unique_ptr<T> pickedEntry_;
+
 public:
-  bool isPicked() const
-  {
-    return pickedEntry_.get();
-  }
+  bool isPicked() const { return pickedEntry_.get(); }
 
-  const std::unique_ptr<T>& getPickedEntry() const
-  {
-    return pickedEntry_;
-  }
+  const std::unique_ptr<T>& getPickedEntry() const { return pickedEntry_; }
 
-  void dropPickedEntry()
-  {
-    pickedEntry_.reset();
-  }
+  void dropPickedEntry() { pickedEntry_.reset(); }
 
-  bool hasNext() const
-  {
-    return !entries_.empty();
-  }
+  bool hasNext() const { return !entries_.empty(); }
 
   T* pickNext()
   {
-    if(hasNext()) {
+    if (hasNext()) {
       pickedEntry_ = std::move(entries_.front());
       entries_.pop_front();
       return pickedEntry_.get();
@@ -83,9 +72,21 @@ public:
     entries_.push_back(std::move(entry));
   }
 
-  size_t countEntryInQueue() const
+  size_t countEntryInQueue() const { return entries_.size(); }
+
+  bool isPicked(const std::function<bool(const T&)>& pred) const
   {
-    return entries_.size();
+    return pickedEntry_ && pred(*pickedEntry_);
+  }
+
+  bool isQueued(const std::function<bool(const T&)>& pred) const
+  {
+    for (auto& e : entries_) {
+      if (pred(*e)) {
+        return true;
+      }
+    }
+    return false;
   }
 };
 

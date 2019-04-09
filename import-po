@@ -30,7 +30,7 @@ echo "Renaming po files..."
 mv "$WORK_DIR"/aria2/*.po "$WORK_DIR"
 
 echo -n "en@quot en@boldquot" > "$PO_DIR"/LINGUAS
-for file in `ls "$WORK_DIR"/*.po`; do
+for file in "$WORK_DIR"/*.po; do
     # First remove useless '\r' in messages
     sed -i -e 's/\\r//' "$file"
     bn=`basename "$file"`
@@ -39,7 +39,7 @@ for file in `ls "$WORK_DIR"/*.po`; do
     # copy file to po directory
     echo "Moving \`$file' to \`$dst'..."
     mv "$file" "$dst"
-    # Upate LINGUAS here too.
+    # Update LINGUAS here too.
     echo -n " ${bn%.po}" >> "$PO_DIR"/LINGUAS
 done
 

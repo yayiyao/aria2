@@ -2,7 +2,7 @@
 /*
  * aria2 - The high speed download utility
  *
- * Copyright (C) 2014 Nils Maier
+ * Copyright (C) 2015 Tatsuhiro Tsujikawa
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,65 +32,51 @@
  * files in the program, then also delete it here.
  */
 /* copyright --> */
+#include "SHA1IOFile.h"
 
-#define _GNUSOURCE
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <linux/random.h>
-#include <errno.h>
-#include <linux/errno.h>
-#include <stdint.h>
-#include <stdio.h>
+#include <cassert>
 
-#include "config.h"
-#include "getrandom_linux.h"
+namespace aria2 {
 
-int getrandom_linux(void *buf, size_t buflen) {
-  int rv = 0;
-  uint8_t* p = buf;
+SHA1IOFile::SHA1IOFile() : sha1_(MessageDigest::sha1()) {}
 
-  /* Loop while we did not fully retrieve what the user asked for.
-   * This may happen in particular when a call was EINTRupted.
-   */
-  while (buflen) {
-    int read;
-#ifdef HAVE_GETRANDOM
-    /* libc already has support */
-    read = getrandom(p, buflen, 0);
-#else // HAVE_GETRANDOM
-    /* libc has no support, make the syscall ourselves */
-    read = syscall(SYS_getrandom, p, buflen, 0);
-    /* Some libc impl. might mess -ERESTART up */
-    if (read == -EINTR || read == -ERESTART) {
-      /* ERESTART, like EINTR, should restart the call, later, so handle both
-       * the same way.
-       */
-      errno = EINTR;
-      read = -1;
-    }
-    /* Some other non-interrupted error happened, put error code into errno and
-     * switch read to -1 (return value).
-     */
-    if (read < -1) {
-      errno = -read;
-      read = -1;
-    }
-#endif // HAVE_GETRANDOM
-    if (read < 0) {
-      if (errno == EINTR) {
-        /* Restart call */
-        continue;
-      }
-      /* Call failed, return -1, errno should be set up correctly at this
-       * point.
-       */
-      return -1;
-    }
-    /* We got some more randomness */
-    p += read;
-    rv += read;
-    buflen -= read;
-  }
+std::string SHA1IOFile::digest() { return sha1_->digest(); }
 
-  return rv;
+size_t SHA1IOFile::onRead(void* ptr, size_t count)
+{
+  assert(0);
+  return 0;
 }
+
+size_t SHA1IOFile::onWrite(const void* ptr, size_t count)
+{
+  sha1_->update(ptr, count);
+
+  return count;
+}
+
+char* SHA1IOFile::onGets(char* s, int size)
+{
+  assert(0);
+  return nullptr;
+}
+
+int SHA1IOFile::onVprintf(const char* format, va_list va)
+{
+  assert(0);
+  return -1;
+}
+
+int SHA1IOFile::onFlush() { return 0; }
+
+int SHA1IOFile::onClose() { return 0; }
+
+bool SHA1IOFile::onSupportsColor() { return false; }
+
+bool SHA1IOFile::isError() const { return false; }
+
+bool SHA1IOFile::isEOF() const { return false; }
+
+bool SHA1IOFile::isOpen() const { return true; }
+
+} // namespace aria2

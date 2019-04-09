@@ -2,7 +2,7 @@
 /*
  * aria2 - The high speed download utility
  *
- * Copyright (C) 2014 Nils Maier
+ * Copyright (C) 2015 Tatsuhiro Tsujikawa
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,18 +32,31 @@
  * files in the program, then also delete it here.
  */
 /* copyright --> */
+#include "EvictSocketPoolCommand.h"
+#include "RequestGroupMan.h"
+#include "DownloadEngine.h"
 
-#ifndef D_GETRANDOM_LINUX_H
-#define D_GETRANDOM_LINUX_H
+namespace aria2 {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int getrandom_linux(void *buf, size_t buflen);
-
-#ifdef __cplusplus
+EvictSocketPoolCommand::EvictSocketPoolCommand(cuid_t cuid, DownloadEngine* e,
+                                               std::chrono::seconds interval)
+    : TimeBasedCommand(cuid, e, std::move(interval), true)
+{
 }
-#endif
 
-#endif /* D_GETRANDOM_LINUX_H */
+EvictSocketPoolCommand::~EvictSocketPoolCommand() = default;
+
+void EvictSocketPoolCommand::preProcess()
+{
+  if (getDownloadEngine()->getRequestGroupMan()->downloadFinished() ||
+      getDownloadEngine()->isHaltRequested()) {
+    enableExit();
+  }
+}
+
+void EvictSocketPoolCommand::process()
+{
+  getDownloadEngine()->evictSocketPool();
+}
+
+} // namespace aria2

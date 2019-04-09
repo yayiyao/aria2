@@ -50,11 +50,11 @@ namespace aria2 {
 
 class Peer;
 
-typedef std::set<std::shared_ptr<Peer>, RefLess<Peer> > PeerSet;
+typedef std::set<std::shared_ptr<Peer>, RefLess<Peer>> PeerSet;
 
 class PeerStorage {
 public:
-  virtual ~PeerStorage() {}
+  virtual ~PeerStorage() = default;
 
   /**
    * Adds new peer to the internal peer list.
@@ -65,7 +65,13 @@ public:
   /**
    * Adds all peers in peers to internal peer list.
    */
-  virtual void addPeer(const std::vector<std::shared_ptr<Peer> >& peers) = 0;
+  virtual void addPeer(const std::vector<std::shared_ptr<Peer>>& peers) = 0;
+
+  /**
+   * Adds new peer, and checkout it atomically.
+   */
+  virtual std::shared_ptr<Peer>
+  addAndCheckoutPeer(const std::shared_ptr<Peer>& peer, cuid_t cuid) = 0;
 
   /**
    * Returns the number of peers, including used and unused ones.
@@ -75,7 +81,7 @@ public:
   /**
    * Returns internal dropped peer list.
    */
-  virtual const std::deque<std::shared_ptr<Peer> >& getDroppedPeers() = 0;
+  virtual const std::deque<std::shared_ptr<Peer>>& getDroppedPeers() = 0;
 
   /**
    * Returns true if at least one unused peer exists.

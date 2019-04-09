@@ -49,10 +49,9 @@ namespace aria2 {
  * The progress information is available using getCurrentOffset() and
  * getTotalLength().
  */
-class IteratableValidator
-{
+class IteratableValidator {
 public:
-  virtual ~IteratableValidator() {}
+  virtual ~IteratableValidator() = default;
 
   virtual void init() = 0;
 

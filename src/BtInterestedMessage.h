@@ -45,6 +45,7 @@ class BtInterestedMessage;
 class BtInterestedMessage : public ZeroBtMessage {
 private:
   PeerStorage* peerStorage_;
+
 public:
   BtInterestedMessage();
   virtual ~BtInterestedMessage();
@@ -53,14 +54,10 @@ public:
 
   static const char NAME[];
 
-  static std::unique_ptr<BtInterestedMessage> create
-  (const unsigned char* data, size_t dataLength);
+  static std::unique_ptr<BtInterestedMessage> create(const unsigned char* data,
+                                                     size_t dataLength);
 
   virtual void doReceivedAction() CXX11_OVERRIDE;
-
-  virtual bool sendPredicate() const CXX11_OVERRIDE;
-
-  virtual std::unique_ptr<ProgressUpdate> getProgressUpdate() CXX11_OVERRIDE;
 
   void setPeerStorage(PeerStorage* peerStorage);
 };

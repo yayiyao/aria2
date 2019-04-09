@@ -41,10 +41,7 @@
 
 namespace aria2 {
 
-enum TLSDirection {
-  TLS_WANT_READ = 1,
-  TLS_WANT_WRITE
-};
+enum TLSDirection { TLS_WANT_READ = 1, TLS_WANT_WRITE };
 
 enum TLSErrorCode {
   TLS_ERR_OK = 0,
@@ -59,7 +56,7 @@ public:
   static TLSSession* make(TLSContext* ctx);
 
   // MUST deallocate all resources
-  virtual ~TLSSession() {}
+  virtual ~TLSSession() = default;
 
   // Initializes SSL/TLS session. The |sockfd| is the underlying
   // transport socket. This function returns TLS_ERR_OK if it
@@ -110,13 +107,17 @@ public:
   // Returns last error string
   virtual std::string getLastErrorString() = 0;
 
+  // Returns buffered length, which can be read immediately without
+  // contacting network.
+  virtual size_t getRecvBufferedLength() = 0;
+
 protected:
-  TLSSession() {}
+  TLSSession() = default;
+
 private:
   TLSSession(const TLSSession&);
   TLSSession& operator=(const TLSSession&);
 };
-
-}
+} // namespace aria2
 
 #endif // TLS_SESSION_H

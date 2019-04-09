@@ -42,51 +42,31 @@ namespace aria2 {
 const char BtInterestedMessage::NAME[] = "interested";
 
 BtInterestedMessage::BtInterestedMessage()
-  : ZeroBtMessage(ID, NAME),
-    peerStorage_(nullptr)
-{}
+    : ZeroBtMessage(ID, NAME), peerStorage_(nullptr)
+{
+}
 
-BtInterestedMessage::~BtInterestedMessage() {}
+BtInterestedMessage::~BtInterestedMessage() = default;
 
-std::unique_ptr<BtInterestedMessage> BtInterestedMessage::create
-(const unsigned char* data, size_t dataLength)
+std::unique_ptr<BtInterestedMessage>
+BtInterestedMessage::create(const unsigned char* data, size_t dataLength)
 {
   return ZeroBtMessage::create<BtInterestedMessage>(data, dataLength);
 }
 
 void BtInterestedMessage::doReceivedAction()
 {
-  if(isMetadataGetMode()) {
+  if (isMetadataGetMode()) {
     return;
   }
-  getPeer()->peerInterested(true);
-  if(!getPeer()->amChoking()) {
+
+  auto& peer = getPeer();
+
+  peer->peerInterested(true);
+
+  if (peer->amChoking()) {
     peerStorage_->executeChoke();
   }
-}
-
-bool BtInterestedMessage::sendPredicate() const
-{
-  return !getPeer()->amInterested();
-}
-
-namespace {
-struct ThisProgressUpdate : public ProgressUpdate {
-  ThisProgressUpdate(std::shared_ptr<Peer>  peer)
-    : peer(std::move(peer)) {}
-  virtual void update(size_t length, bool complete) CXX11_OVERRIDE
-  {
-    if(complete) {
-      peer->amInterested(true);
-    }
-  }
-  std::shared_ptr<Peer> peer;
-};
-} // namespace
-
-std::unique_ptr<ProgressUpdate> BtInterestedMessage::getProgressUpdate()
-{
-  return make_unique<ThisProgressUpdate>(getPeer());
 }
 
 void BtInterestedMessage::setPeerStorage(PeerStorage* peerStorage)

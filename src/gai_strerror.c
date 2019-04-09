@@ -29,26 +29,26 @@
 #include "gai_strerror.h"
 
 #ifdef ENABLE_NLS
-#include <libintl.h>
+#  include <libintl.h>
 #endif
 
 #ifdef ENABLE_NLS
-#define _(string) gettext(string)
-#ifdef gettext_noop
-#define N_(string) gettext_noop(string)
+#  define _(string) gettext(string)
+#  ifdef gettext_noop
+#    define N_(string) gettext_noop(string)
+#  else
+#    define N_(string) (string)
+#  endif
 #else
-#define N_(string) (string)
-#endif
-#else
-#define gettext(string) (string)
-#define _(string) (string)
-#define N_(string) (string)
+#  define gettext(string) (string)
+#  define _(string) (string)
+#  define N_(string) (string)
 #endif
 
 /*
  * Error messages for gai_strerror().
  */
-static char *eai_errlist[] = {
+static char* eai_errlist[] = {
     N_("Success"),
 
     /* EAI_ADDRFAMILY */
@@ -82,18 +82,15 @@ static char *eai_errlist[] = {
     N_("ai_socktype not supported"),
 
     /* EAI_SYSTEM */
-    N_("System error returned in errno")
-};
+    N_("System error returned in errno")};
 
 /*
  * gai_strerror().
  */
-const char *
-gai_strerror(ecode)
-    int ecode;
+const char* gai_strerror(ecode) int ecode;
 {
-    if (ecode < 0 || ecode > EAI_SYSTEM)
-	return _("Unknown error");
+  if (ecode < 0 || ecode > EAI_SYSTEM)
+    return _("Unknown error");
 
-    return gettext(eai_errlist[ecode]);
+  return gettext(eai_errlist[ecode]);
 }
